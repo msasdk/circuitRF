@@ -1,0 +1,136 @@
+---
+title: S-Parameter Viewer
+slug: reference/sparameter-viewer.html
+doc-kind: Reference Guide
+breadcrumb: Docs > Reference > S-Parameter Viewer
+lede: A Touchstone file at a glance - what it states, its reflections on a Smith chart, and every term in dB and phase over the file's own frequency range.
+keywords: S-Parameter Viewer, Touchstone, s2p, sNp, SNP, SnP, S-parameters, Smith chart, magnitude, phase, S11, S21
+---
+
+<nav class="toc">
+<h2>On this page</h2>
+<ol>
+<li><a href="#opening">Opening the viewer</a></li>
+<li><a href="#file">What the file states</a></li>
+<li><a href="#plots">The three plots</a></li>
+<li><a href="#terms">Choosing which terms to draw</a></li>
+<li><a href="#findings">Findings</a></li>
+<li><a href="#saving">Saving it as a Data Display</a></li>
+<li><a href="#headless">Running it headless</a></li>
+<li><a href="#limits">What it will not do</a></li>
+</ol>
+</nav>
+
+## Opening the viewer {#opening}
+
+**Tools &rsaquo; S-Parameter Viewer** opens an empty viewer, with or without a workspace, and its
+**Open Touchstone file&hellip;** button reads a `.s1p`, `.s2p`, &hellip; `.sNp`. It is a window of its
+own, like the Match Designer and the Signal Designer, and it opens offset a little down and to the
+right of the workspace window. Several may be open; asking for a file that is already on show brings
+that window forward.
+
+A Touchstone file in the Workspace opens the same way. **Open in S-Parameter Viewer** is on its
+right-click menu, and double-clicking the file does it too &mdash; for a file you imported and for a
+loose `.sNp` sitting in the workspace folder.
+
+A placed [SnP](components.html#snp) component &mdash; the library's **S1P**, **S2P**, **S3P**, **S4P**
+and **SnP** are all this one component &mdash; grows a **View** button beside **Browse&hellip;** and
+**Show** once its file is chosen and is there. **View** opens the viewer on that file.
+
+A Data Display's dataset list offers the same **View** on any row whose file is a Touchstone file.
+
+## What the file states {#file}
+
+The left pane reads the file back to you, which is most of the point of opening it:
+
+| | |
+|---|---|
+| **Ports** | How many the data holds. When the file's name claims a different number, it says so. |
+| **Parameters** | S, Y or Z, and how the numbers are written: real and imaginary, magnitude and angle, or dB and angle. |
+| **Unit** | The frequency unit on the file's option line. |
+| **Points, Start, Stop** | How many frequencies, and the first and the last. |
+| **Spacing** | Uniform, with its step; logarithmic, with its points per decade; or irregular, with its smallest and largest step. |
+| **Reference** | The reference impedance, per port when the ports differ. |
+| **Noise data** | How many noise rows a two-port carries, or none. |
+
+The plots follow the file. Nothing is resampled and nothing is interpolated: each curve joins the
+file's own points, and **Show samples** puts a dot on every one of them so the step can be seen.
+
+## The three plots {#plots}
+
+**Reflection** is a Smith chart of the reflection at each port &mdash; S11, S22 and so on.
+
+**Magnitude** is every ticked term in dB against frequency, and **Phase** is the same terms in degrees.
+The frequency axis runs from exactly the file's lowest frequency to exactly its highest, rather than
+out to the nearest round number, and a logarithmically swept file is drawn on a logarithmic axis. The
+phase axis is fixed at &plusmn;180&deg;, which is the whole of what a wrapped phase can be.
+
+The axis unit follows the span. A file written in Hz that runs from 1 to 5 GHz reads in GHz, because
+an axis of 1E+09 to 5E+09 says the same thing badly.
+
+Markers work as they do in a Data Display: double-click a trace to drop one, drag it, and read it in
+its box. **Delete** removes the selected ones. Arrow keys step a marker one sample at a time.
+
+A file of Y- or Z-parameters is drawn as S-parameters at the file's own reference, because a Smith
+chart of an admittance would not be a reflection. The file pane still says Y or Z, which is what the
+file is.
+
+## Choosing which terms to draw {#terms}
+
+Every term is a tick box, and a reflection's name is the heavier one. The four buttons above them:
+
+| | |
+|---|---|
+| **All** | Every term of the matrix. |
+| **Reflections** | S11, S22, &hellip; only. |
+| **Default** | What the viewer opened on. |
+| **None** | Clears the plots. |
+
+Up to four ports, **Default** is every term. Above that it is the reflections plus each forward
+neighbour, S21, S32, S43 and so on &mdash; an `.s16p` has 256 terms, and drawing all of them is a
+choice rather than a greeting. Past six terms the rectangular plots drop their legend, because the
+legend would cover the curves; each tick box carries its term's colour.
+
+## Findings {#findings}
+
+Three things about a file are defects, and each is stated as a sentence naming where:
+
+- the file's name claims a port count the data does not hold, so its matrices may have been assembled
+  the wrong shape;
+- the frequencies are not strictly increasing, and the plots draw them in file order anyway so the
+  defect is visible;
+- the reference impedance has a resistance that is not positive, so the data cannot be renormalised.
+
+The plots are drawn either way. A file that cannot be read at all shows the reader's own reason and
+no plots.
+
+Passivity, reciprocity and causality are not reported here. An amplifier has gain and a circulator is
+not reciprocal, and neither is a defect in a file; [`circuitrf check`](cli.html#check) measures all
+three and leaves the judgement to you.
+
+## Saving it as a Data Display {#saving}
+
+The viewer keeps nothing of its own. The chart button in the header, **Save as Data Display**, writes
+the plots as they stand to a `.cdd` and opens it, so markers, axes and terms can be edited afterwards
+in the [Data Display](data-display.html). The file itself is referenced, not copied.
+
+**Reload** reads the file again, which is what you want after a measurement or a run has rewritten it.
+The terms you had ticked stay ticked.
+
+## Running it headless {#headless}
+
+[`circuitrf snp`](cli.html#snp) prints this pane's lines, and `-o` draws the three plots or writes the
+same Data Display the button does.
+
+<pre><code class="cmd"><span class="prompt">$ </span>circuitrf snp amp.s2p
+<span class="prompt">$ </span>circuitrf snp coupler.s4p --params reflections,S21 --samples -o coupler.svg</code></pre>
+
+## What it will not do {#limits}
+
+It does not draw a polar plot, and it does not check passivity, reciprocity or causality.
+
+It reads the Touchstone files the rest of circuitRF reads. A Touchstone 2 file written with keyword
+blocks (`[Version] 2.0`, `[Number of Ports]`, `[Network Data]`) is refused with the reader's own
+reason, the same as everywhere else.
+
+It edits nothing. To change a file, change the file; **Reload** picks the change up.

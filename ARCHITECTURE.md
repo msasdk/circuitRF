@@ -47,7 +47,7 @@ product) independent of any GUI framework. Full detail:
   src/Cli       Headless driver — depends on Core/Engine/RfCore/Design, NOT on src/Ui. Proof
                  the engines are fully usable with no GUI; the engines' primary test harness.
                  Verbs: sparam, dc, hb, lp, lpp, em, elab, netlist, check, explain, lvs,
-                 rail, smith, convert, new, import, render, plot, find, read, reference,
+                 rail, smith, snp, convert, new, import, render, plot, find, read, reference,
                  history, serve.  See docs/user/reference/cli.html.
 ```
 

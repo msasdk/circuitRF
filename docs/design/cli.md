@@ -46,6 +46,7 @@ framework, not the GUI referencing the CLI — and `CircuitRF.Cli.Verbs` has its
 | `fields` | `.cnl` or `.csch` | its `fields` analyses through `CircuitEvaluation` — an EM block's per-port fields recombined by the circuit's waves (`FieldCosimulation`); no EM run | stdout notes and scalars; SAR and B1 volumes and records beside the field set; `-o .mat/.npy/.txt` for the scalars — §28 |
 | `rail` | `.crail` (or a `.clay` / `.csch` / cell folder with one beside it) | `RailOrder` + `RailDcRun` — the extractor, the solve and the via check `src/Design/RailRf` already holds | stdout tables; `-o .csv/.npy/.mat/.txt` for the numbers and `.svg/.pdf` for the report page — §17 |
 | `smith` | `.csmith` | `SmithCascade` + `SmithReadings` + `SmithBand` — the evaluator the Smith Chart window's status strip reads on every edit | stdout reading + the per-node walk; `-o .s1p` for the load Γ and `.svg/.pdf/.png` for the chart — §18 |
+| `snp` | a Touchstone `.sNp` | `TouchstoneSource` + `SParameterViewerPreset` — the reading and the plots the S-Parameter Viewer shows | stdout file pane; `-o .svg/.pdf/.png` the three plots, `-o .cdd` the Data Display — §33 |
 | `opt` | `.cnl` or `.csch` | `OptimizationRun` — the Optimizer window's run — over the `tune`, `goal` and `optimize` lines | stdout result tables; `-o .npy` the best point's full results plus the `opt` history group; `--history .npy`; `--save-preset` the one write to the design — §24 |
 | `yield` | `.cnl` or `.csch` | `StatisticalRun` — the Yield panel's run — over the tolerances, the yield-spec goals and the `statistics` line; nouns `mc`, `estimate`, `trial` | stdout yield, goals, statistics and worst-trial tables; writes `<design>.yield.npy` (`-o` moves it); `--save-preset`/`--save-corner` with `--trial` the two writes to the design — §25 |
 | `elab` | `.cnl` or `.csch` | elaboration only | the elaborated netlist, for development |
@@ -72,6 +73,7 @@ Fourteen verbs run no analysis, so none of §3-§6 applies to them and §7's exi
 | `read` | a result file, or one of circuitRF's own documents | loads it back through the readers the GUI reads through | **nothing** — §11.4 |
 | `netlist` | a `.csch`, a cell folder, or a workspace + `--cell` — or a `.cnl` + `--to-schematic` | the extraction the GUI's own Simulate performs, or `NetlistSchematic.Build` | one `.cnl`, or the text on stdout; a drawn `.csch` — §14, §14.2 |
 | `plot` | a result file | builds a one-plot data display and draws it | one `.svg` / `.pdf` / `.png`, and the `.cdd` under `--write-cdd` — §15 |
+| `snp` | a Touchstone `.sNp` | reads it through `TouchstoneSource` and composes the S-Parameter Viewer's plots | the file pane on stdout; `-o .svg/.pdf/.png` or `.cdd` — §33 |
 | `find` | a directory | enumerates the workspaces, cells, views and analyses under it | **nothing** — §16 |
 | `lvs` | a cell folder, a workspace, a `.clay` or a `.csch` | compares the artwork against the drawing, through `LvsRun.Run` | **nothing** unless `-o` names a report — §19 |
 | `recognize` | a `.clay`, a cell folder, a workspace + `--cell`, or a picture (§26.8) | reads the artwork — or the picture — as a circuit, through `ArtworkRecognition` / `ImageRecognition` / `SchematicImageRecognition` | **nothing** unless `-o` (a `.cnl`), `--into` (a schematic), `--parts-out` (the parts table) or `--overlay` (the picture, annotated) — §26 |
@@ -495,7 +497,7 @@ symptom and not the cause.
 | 1 | could not run — bad arguments, missing file, no matching analysis, a refusal, an exception |
 | 2 | ran, but did not converge |
 | 3 | `opt`: finished, and at least one enabled goal is unmet (§24.3) · `yield estimate`: finished, and the yield is below `--target` (§25.3) |
-| 130 | stopped — `em`, `fields`, `render`, `rail`, `smith`, `lvs`, `opt`, `yield` and `recognize`, and only when the run was cancelled at a work boundary (§8.4, §28.3, §13.6, §17.5, §18.6, §19.4, §24.3, §25.3, §26.5). All of them write NOTHING on a cancellation |
+| 130 | stopped — `em`, `fields`, `render`, `rail`, `smith`, `snp`, `lvs`, `opt`, `yield` and `recognize`, and only when the run was cancelled at a work boundary (§8.4, §28.3, §13.6, §17.5, §18.6, §19.4, §24.3, §25.3, §26.5, §33). All of them write NOTHING on a cancellation |
 
 `2` is deliberately **not** the same test for every verb. `hb` and `dc` fail on any non-converged
 solve. A loadpull grid in which some points do not converge is a normal, useful result — the edge of
@@ -4417,3 +4419,56 @@ markers, badges, scale bar — is `ReportFurniture`, shared with the Impedance r
 Gate: `tests/Ui.Tests/Review/ReviewReportTests.cs` — page counts on seeded results (two checks with findings, a
 clean one and a not-run one is 1 + 2 + 2; 500 findings in one check is still two pages, "… and 480 more"), page 1's
 TEXT read back from the PDF, and the verb as a process writing the in-process call's bytes but the PDF's dates.
+
+## 33. `snp` — the S-Parameter Viewer, with no display
+
+`docs/design/sparameter-viewer.md`.
+
+```
+circuitrf snp amp.s2p                                          # the file pane
+circuitrf snp coupler.s4p --params reflections,S21 --samples   # chosen terms, a dot per point
+circuitrf snp amp.s2p -o amp.svg                               # the three plots
+circuitrf snp amp.s2p -o amp.cdd                               # the Data Display the window saves
+```
+
+### 33.1 It owns no reading, and no rendering either
+
+`src/Cli/Snp.cs` is argument parsing, refusals and reporting. The file is read through
+`TouchstoneSource`, which the window reads it through; what the file states, and the wording of every
+line, is `SParameterViewerPreset.FileFacts`; the plots are `SParameterViewerPreset.Compose`, loaded by
+`PlotConfigLoader` against that same source and drawn by `RenderDataDisplay.Emit`. A Y- or Z-parameter
+file is converted to S inside the source, so the verb and the window cannot draw one differently.
+
+The report's lines and the window's file pane are one list for the same reason `smith`'s reading and
+its status strip are: a terminal and a window spelling one file differently is two answers.
+
+### 33.2 What it takes
+
+The kind is inferred through `DocumentKinds.Classify`, and any other kind is a refusal BY KIND.
+
+| Option | Meaning |
+|---|---|
+| `--params <list>` | The terms drawn: `S21`, `S(2,1)` from ten ports up, comma-separated, plus the words `all`, `reflections` and `default`. The default is the window's own opening selection — every term up to four ports, else the reflections and each forward neighbour. A term the file does not have is `touchstone.no-such-parameter`, naming the port count. |
+| `--samples` | A dot at every point the file holds. |
+| `-o out.{svg,pdf,png}` | The three plots. |
+| `-o out.cdd` | The plots as a Data Display — `SParameterViewerPreset.Build`, which is what the window's Save as Data Display writes, so the two are the same bytes. |
+| `--size`, `--scale`/`--dpi`, `--background`, `--dark` | `plot`'s picture options, spelling for spelling and refusal for refusal. |
+
+### 33.3 Exit codes
+
+0 when the file was read and it has no structural defect. **1** when it has one — a name that
+contradicts the data, frequencies that are not strictly increasing, a reference no renormalisation can
+use — reported as `TouchstoneFacts.Findings`' diagnostics, which are the sentences the window's
+Findings card shows. The picture or the `.cdd` is written FIRST: a picture of a broken file is the
+picture the window shows of it, and refusing to write it would hide the defect. **130** on a
+cancellation, which writes nothing.
+
+Passivity, reciprocity and causality are not here. `check` measures them, and a viewer that also did
+would be a second judgement of the same numbers.
+
+### 33.4 The gate
+
+`tests/Ui.Tests/SParameters/SnpCliVerbTests.cs`. The report, as a process, prints
+`SParameterViewerPreset.FileFacts`' lines; `--json` carries `result.snp`; `-o x.cdd` run in process is
+byte for byte what `SParameterViewerPreset.Build` writes for the same file, which is what the window
+saves. Beside them: a term the file lacks, an extension the verb does not write, and a refusal by kind.

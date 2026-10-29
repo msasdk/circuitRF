@@ -131,6 +131,7 @@ convention behind both.</p>
 | `model new`, `import`, `deembed`, `fit`, `check-charge`, `explain`, `export`, `validate`, `report` | a `.cmc` | The [Model Composer](#model)'s steps — the same functions its window calls | The `.cmc`, its cache, a `.cmodel` or a cell, a report folder — as the noun says |
 | `rail` | `.crail` | The same DC solve and via check [railRF](railrf.html)'s **Run** button calls | The ports, the ranked breakdown and the via check to stdout; `-o .csv/.npy/.mat/.txt/.svg/.pdf` |
 | `smith` | `.csmith` | The same cascade evaluator the Smith Chart window walks on every edit | The reading and the per-node table to stdout; `-o .s1p` for the load Γ, `-o .svg/.pdf/.png` for the chart |
+| `snp` | a Touchstone `.sNp` | The same reading and plots the [S-Parameter Viewer](sparameter-viewer.html) shows | What the file states, to stdout; `-o .svg/.pdf/.png` for the three plots, `-o .cdd` for a Data Display of them |
 | `lvs` | a cell folder, a workspace, a `.clay` or a `.csch` | The same comparison the [LVS panel](lvs.html)'s **Compare** button calls | **Nothing** — the report to stdout; `-o report.txt` |
 | `recognize` | a `.clay`, a cell folder, or a workspace with `--cell` | Reads the board's copper as a circuit — ground, vias, ports, parts and lines as native components | **Nothing** — the report and the parts table to stdout; `-o circuit.cnl`, `--into new:<name>` for a schematic, `--parts-out parts.csv` |
 | `impedance` | a `.clay` or a cell folder | The same analysis the layout editor's [Impedance Analysis](layout-editor.html#impedance-analysis) runs | The per-trace report to stdout; `-o report.pdf` |
@@ -1469,6 +1470,58 @@ anything else is a change to the **document**, which you make by writing it.
 An **overlay that does not resolve** is a warning and not a refusal: reference material that is missing
 must not take the work down with it, so the chart still draws everything that did resolve and the
 warning names what did not.
+
+## `snp` — a Touchstone file, at a glance {#snp}
+
+<pre><code class="cmd"><span class="prompt">$ </span>circuitrf snp &lt;file.sNp&gt; [--params S11,S21|all|reflections|default] [--samples]
+                     [-o out.{svg,pdf,png,cdd}]</code></pre>
+
+`snp` is the [S-Parameter Viewer](sparameter-viewer.html) with no window. It prints what the file
+states — ports, the option line, the frequency range and how it is spaced, the reference impedance,
+whether it carries noise data — and names the terms it would plot.
+
+<pre><code class="cmd"><span class="prompt">$ </span>circuitrf snp amp.s2p
+amp.s2p
+  Ports         2
+  Parameters    S, MA (magnitude, angle)
+  Unit          GHz
+  Points        41
+  Start         1 GHz
+  Stop          5 GHz
+  Spacing       uniform, step 100 MHz
+  Reference     50 Ω
+  Noise data    none
+  Plotted       S11, S12, S21, S22</code></pre>
+
+Those lines are the viewer's own, so a terminal and the window cannot spell one file differently.
+
+### Which terms {#snp-params}
+
+`--params` chooses them, comma-separated: `S21`, or `S(2,1)` once a file has ten ports or more, where
+`S101` would be ambiguous. `all`, `reflections` and `default` are words. The default is every term up
+to four ports, and above that the reflections plus each forward neighbour — the viewer's own opening
+selection. A term the file does not have is a refusal naming the file's port count.
+
+`--samples` puts a dot on every point the file holds.
+
+### What it writes {#snp-output}
+
+| `-o` | You get |
+|---|---|
+| `out.svg`, `out.pdf`, `out.png` | The viewer's three plots: reflections on a Smith chart, magnitude in dB, phase in degrees, over exactly the file's own frequency range. |
+| `out.cdd` | The same plots as a Data Display — what the viewer's **Save as Data Display** writes for this file, so the two cannot drift. |
+
+The picture takes the same options [`plot`](#plot) takes — `--size`, `--scale`/`--dpi`,
+`--background`, `--dark`.
+
+### What it reports, and the exit code {#snp-exit}
+
+A file whose name claims a different port count, whose frequencies are not strictly increasing, or
+whose reference impedance has no positive resistance, is reported in the viewer's own sentence and the
+command exits **1**. Anything you asked to be written is written first: a picture of a broken file is
+still the picture the window shows of it.
+
+Passivity, reciprocity and causality are not this verb's business. [`check`](#check) measures all three.
 
 ## `convert` — layout interchange {#convert}
 

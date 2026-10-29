@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>circuitRF — S-Parameter Viewer</title>
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/circuitrf-docs.css">
+<!--
+  GENERATED FILE - do not edit. Edit the Markdown source named below and re-run:
+      dotnet run [project tools/DocGen] [flag out] docs/user
+  (XML comments cannot contain a double hyphen; the flags are ordinary ones.)
+  Source: docs/user/src/reference/sparameter-viewer.md
+-->
+</head>
+<body>
+
+<header class="doc-header">
+  <a class="brand" href="../index.html"><img class="logo" src="../assets/img/favicon.svg" alt="circuitRF"><span class="wordmark">circuitRF</span></a>
+  <a class="doc-kind" href="index.html">Reference Guide</a>
+  <div class="doc-search" data-crf-search data-root="../" hidden>
+    <input type="search" class="search-input" autocomplete="off" spellcheck="false"
+           aria-label="Search the documentation" placeholder="Search docs"
+           role="combobox" aria-expanded="false" aria-autocomplete="list">
+    <div class="search-panel" role="listbox" hidden></div>
+  </div>
+</header>
+<hr class="doc-headrule">
+
+<main class="page">
+  <div class="page-top">
+    <p class="breadcrumb"><a href="../index.html">Docs</a> › <a href="index.html">Reference</a> › S-Parameter Viewer</p>
+    <nav class="page-nav-top" aria-label="Previous and next page">
+      <a class="prev" href="smith-chart.html" title="Previous: Smith Chart"><span class="arrow">‹</span><span class="name">Smith Chart</span></a>
+      <a class="next" href="harmonicarf.html" title="Next: harmonicaRF"><span class="name">harmonicaRF</span><span class="arrow">›</span></a>
+    </nav>
+  </div>
+
+  <h1>S-Parameter Viewer</h1>
+  <p class="lede">A Touchstone file at a glance - what it states, its reflections on a Smith chart, and every term in dB and phase over the file&#39;s own frequency range.</p>
+
+<nav class="toc">
+<h2>On this page</h2>
+<ol>
+<li><a href="#opening">Opening the viewer</a></li>
+<li><a href="#file">What the file states</a></li>
+<li><a href="#plots">The three plots</a></li>
+<li><a href="#terms">Choosing which terms to draw</a></li>
+<li><a href="#findings">Findings</a></li>
+<li><a href="#saving">Saving it as a Data Display</a></li>
+<li><a href="#headless">Running it headless</a></li>
+<li><a href="#limits">What it will not do</a></li>
+</ol>
+</nav>
+<h2 id="opening">Opening the viewer</h2>
+<p><strong>Tools › S-Parameter Viewer</strong> opens an empty viewer, with or without a workspace, and its
+<strong>Open Touchstone file…</strong> button reads a <code>.s1p</code>, <code>.s2p</code>, … <code>.sNp</code>. It is a window of its
+own, like the Match Designer and the Signal Designer, and it opens offset a little down and to the
+right of the workspace window. Several may be open; asking for a file that is already on show brings
+that window forward.</p>
+<p>A Touchstone file in the Workspace opens the same way. <strong>Open in S-Parameter Viewer</strong> is on its
+right-click menu, and double-clicking the file does it too — for a file you imported and for a
+loose <code>.sNp</code> sitting in the workspace folder.</p>
+<p>A placed <a href="components.html#snp">SnP</a> component — the library's <strong>S1P</strong>, <strong>S2P</strong>, <strong>S3P</strong>, <strong>S4P</strong>
+and <strong>SnP</strong> are all this one component — grows a <strong>View</strong> button beside <strong>Browse…</strong> and
+<strong>Show</strong> once its file is chosen and is there. <strong>View</strong> opens the viewer on that file.</p>
+<p>A Data Display's dataset list offers the same <strong>View</strong> on any row whose file is a Touchstone file.</p>
+<h2 id="file">What the file states</h2>
+<p>The left pane reads the file back to you, which is most of the point of opening it:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Ports</strong></td>
+<td>How many the data holds. When the file's name claims a different number, it says so.</td>
+</tr>
+<tr>
+<td><strong>Parameters</strong></td>
+<td>S, Y or Z, and how the numbers are written: real and imaginary, magnitude and angle, or dB and angle.</td>
+</tr>
+<tr>
+<td><strong>Unit</strong></td>
+<td>The frequency unit on the file's option line.</td>
+</tr>
+<tr>
+<td><strong>Points, Start, Stop</strong></td>
+<td>How many frequencies, and the first and the last.</td>
+</tr>
+<tr>
+<td><strong>Spacing</strong></td>
+<td>Uniform, with its step; logarithmic, with its points per decade; or irregular, with its smallest and largest step.</td>
+</tr>
+<tr>
+<td><strong>Reference</strong></td>
+<td>The reference impedance, per port when the ports differ.</td>
+</tr>
+<tr>
+<td><strong>Noise data</strong></td>
+<td>How many noise rows a two-port carries, or none.</td>
+</tr>
+</tbody>
+</table>
+<p>The plots follow the file. Nothing is resampled and nothing is interpolated: each curve joins the
+file's own points, and <strong>Show samples</strong> puts a dot on every one of them so the step can be seen.</p>
+<h2 id="plots">The three plots</h2>
+<p><strong>Reflection</strong> is a Smith chart of the reflection at each port — S11, S22 and so on.</p>
+<p><strong>Magnitude</strong> is every ticked term in dB against frequency, and <strong>Phase</strong> is the same terms in degrees.
+The frequency axis runs from exactly the file's lowest frequency to exactly its highest, rather than
+out to the nearest round number, and a logarithmically swept file is drawn on a logarithmic axis. The
+phase axis is fixed at ±180°, which is the whole of what a wrapped phase can be.</p>
+<p>The axis unit follows the span. A file written in Hz that runs from 1 to 5 GHz reads in GHz, because
+an axis of 1E+09 to 5E+09 says the same thing badly.</p>
+<p>Markers work as they do in a Data Display: double-click a trace to drop one, drag it, and read it in
+its box. <strong>Delete</strong> removes the selected ones. Arrow keys step a marker one sample at a time.</p>
+<p>A file of Y- or Z-parameters is drawn as S-parameters at the file's own reference, because a Smith
+chart of an admittance would not be a reflection. The file pane still says Y or Z, which is what the
+file is.</p>
+<h2 id="terms">Choosing which terms to draw</h2>
+<p>Every term is a tick box, and a reflection's name is the heavier one. The four buttons above them:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>All</strong></td>
+<td>Every term of the matrix.</td>
+</tr>
+<tr>
+<td><strong>Reflections</strong></td>
+<td>S11, S22, … only.</td>
+</tr>
+<tr>
+<td><strong>Default</strong></td>
+<td>What the viewer opened on.</td>
+</tr>
+<tr>
+<td><strong>None</strong></td>
+<td>Clears the plots.</td>
+</tr>
+</tbody>
+</table>
+<p>Up to four ports, <strong>Default</strong> is every term. Above that it is the reflections plus each forward
+neighbour, S21, S32, S43 and so on — an <code>.s16p</code> has 256 terms, and drawing all of them is a
+choice rather than a greeting. Past six terms the rectangular plots drop their legend, because the
+legend would cover the curves; each tick box carries its term's colour.</p>
+<h2 id="findings">Findings</h2>
+<p>Three things about a file are defects, and each is stated as a sentence naming where:</p>
+<ul>
+<li>the file's name claims a port count the data does not hold, so its matrices may have been assembled
+the wrong shape;</li>
+<li>the frequencies are not strictly increasing, and the plots draw them in file order anyway so the
+defect is visible;</li>
+<li>the reference impedance has a resistance that is not positive, so the data cannot be renormalised.</li>
+</ul>
+<p>The plots are drawn either way. A file that cannot be read at all shows the reader's own reason and
+no plots.</p>
+<p>Passivity, reciprocity and causality are not reported here. An amplifier has gain and a circulator is
+not reciprocal, and neither is a defect in a file; <a href="cli.html#check"><code>circuitrf check</code></a> measures all
+three and leaves the judgement to you.</p>
+<h2 id="saving">Saving it as a Data Display</h2>
+<p>The viewer keeps nothing of its own. The chart button in the header, <strong>Save as Data Display</strong>, writes
+the plots as they stand to a <code>.cdd</code> and opens it, so markers, axes and terms can be edited afterwards
+in the <a href="data-display.html">Data Display</a>. The file itself is referenced, not copied.</p>
+<p><strong>Reload</strong> reads the file again, which is what you want after a measurement or a run has rewritten it.
+The terms you had ticked stay ticked.</p>
+<h2 id="headless">Running it headless</h2>
+<p><a href="cli.html#snp"><code>circuitrf snp</code></a> prints this pane's lines, and <code>-o</code> draws the three plots or writes the
+same Data Display the button does.</p>
+<pre><code class="cmd"><span class="prompt">$ </span>circuitrf snp amp.s2p
+<span class="prompt">$ </span>circuitrf snp coupler.s4p --params reflections,S21 --samples -o coupler.svg</code></pre>
+<h2 id="limits">What it will not do</h2>
+<p>It does not draw a polar plot, and it does not check passivity, reciprocity or causality.</p>
+<p>It reads the Touchstone files the rest of circuitRF reads. A Touchstone 2 file written with keyword
+blocks (<code>[Version] 2.0</code>, <code>[Number of Ports]</code>, <code>[Network Data]</code>) is refused with the reader's own
+reason, the same as everywhere else.</p>
+<p>It edits nothing. To change a file, change the file; <strong>Reload</strong> picks the change up.</p>
+
+<nav class="page-nav">
+  <a class="prev" href="smith-chart.html"><span class="dir">Previous</span><span class="name">Smith Chart</span></a>
+  <a class="next" href="harmonicarf.html"><span class="dir">Next</span><span class="name">harmonicaRF</span></a>
+</nav>
+</main>
+
+<footer class="doc-footer">
+  <img src="../assets/img/circuitRF-mark.svg" alt="">
+  <span>circuitRF — RF circuit simulator</span>
+  <span class="spacer"></span>
+  <a href="../index.html">Documentation home</a>
+</footer>
+
+<script src="../assets/js/search-index.js" defer></script>
+<script src="../assets/js/docs-search.js" defer></script>
+</body>
+</html>

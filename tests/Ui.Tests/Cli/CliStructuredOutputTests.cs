@@ -1234,6 +1234,14 @@ public sealed class CliStructuredOutputTests(ITestOutputHelper output) : IDispos
         "smith.path.not-a-smith",
         "smith.path.not-found",
         "smith.set.not-applicable",
+        // `snp` — the S-Parameter Viewer, headless: its own argument refusals only. What a file says about
+        // itself is RfCore's `touchstone.*`, the sentences the viewer window shows.
+        "snp.args.path-required",
+        "snp.cancelled",
+        "snp.output.unknown-format",
+        "snp.output.write-failed",
+        "snp.path.not-found",
+        "snp.path.not-touchstone",
         // R-aut9-1: `sparam -o` honours the extension now, and one that names no format it writes is
         // a refusal listing the ones it does — rather than a Touchstone written under that name.
         "solver.args.noun-required",
