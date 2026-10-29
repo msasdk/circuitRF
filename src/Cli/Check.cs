@@ -1391,17 +1391,20 @@ internal static class Check
             return;
         }
 
-        // The name is a claim about the contents, and the reader will honour the extension over the
-        // data for N > 2 (whose rows span several physical lines). A mismatch is therefore not
-        // cosmetic: it means the matrices were assembled the wrong shape.
-        if (TouchstoneIO.ParsePortsFromExtension(path) is { } declared && declared != h.Ports)
-            f.Add(CliDiagnostics.CheckTouchstonePortMismatch(path, declared, h.Ports));
+        // The structural rules are TouchstoneFacts' — the ones the S-Parameter Viewer reports — so the
+        // viewer and this verb cannot disagree about what a defect is. The name is a claim about the
+        // contents, and the reader will honour the extension over the data for N > 2 (whose rows span
+        // several physical lines). A mismatch is therefore not cosmetic: it means the matrices were
+        // assembled the wrong shape.
+        var facts = TouchstoneFacts.Describe(snp, path);
+        if (facts.PortsDisagreeWithName)
+            f.Add(CliDiagnostics.CheckTouchstonePortMismatch(path, facts.ExtensionPorts!.Value, facts.Ports));
 
-        if (h.FirstNonIncreasingIndex >= 0)
+        if (facts.FrequenciesOutOfOrder)
             f.Add(CliDiagnostics.CheckTouchstoneFrequencyOrder(
-                path, h.FirstNonIncreasingIndex, Hz(snp.Frequencies[h.FirstNonIncreasingIndex])));
+                path, facts.FirstNonIncreasingIndex, Hz(snp.Frequencies[facts.FirstNonIncreasingIndex])));
 
-        if (h.Z0.Real <= 0.0)
+        if (facts.Z0Unusable)
             f.Add(CliDiagnostics.CheckTouchstoneBadZ0(path, Ohms(h.Z0)));
         else if (Math.Abs(h.Z0.Real - 50.0) > 1e-9 || Math.Abs(h.Z0.Imaginary) > 1e-9)
             f.Add(CliDiagnostics.CheckTouchstoneNonStandardZ0(path, Ohms(h.Z0)));
