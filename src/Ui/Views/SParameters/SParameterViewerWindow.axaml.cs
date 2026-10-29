@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -11,6 +12,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
 using CircuitRF.Render.DataDisplay;
 using CircuitRF.Ui.DataDisplay.Controls;
+using SkiaSharp;
 using CircuitRF.Ui.DataDisplay.ViewModels;
 using CircuitRF.Ui.SParameters;
 
@@ -29,7 +31,7 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
     private static readonly string[] PlotNames = ["SmithPlotControl", "MagnitudePlotControl", "PhasePlotControl"];
 
     private readonly System.Collections.ObjectModel.ObservableCollection<MarkerInfoBoxViewModel> _boxes = [];
-    private (PlotControl Plot, PlotContainerViewModel Container)[] _hosted = [];
+    private (PlotControl Plot, PlotContainerViewModel Container, HoverMark Mark)[] _hosted = [];
     private string? _registeredPath;
 
     /// <summary>In the Window menu as in the title bar.</summary>
@@ -47,8 +49,13 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
                 vm.PropertyChanged += (_, e) =>
                 {
                     if (e.PropertyName == nameof(SParameterViewerViewModel.FilePath)) Register(vm.FilePath);
+                    if (e.PropertyName is nameof(SParameterViewerViewModel.ShowSmith)
+                                      or nameof(SParameterViewerViewModel.ShowMagnitude)
+                                      or nameof(SParameterViewerViewModel.ShowPhase))
+                        ApplyPlotRows();
                 };
                 WireMarkers(vm);
+                ApplyPlotRows();
             }
         };
         ActualThemeVariantChanged += (_, _) => SyncPlotTheme();
@@ -191,12 +198,15 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
         layer.ItemsSource = _boxes;
         _hosted =
         [
-            (this.FindControl<PlotControl>("SmithPlotControl")!, vm.SmithContainer),
-            (this.FindControl<PlotControl>("MagnitudePlotControl")!, vm.MagnitudeContainer),
-            (this.FindControl<PlotControl>("PhasePlotControl")!, vm.PhaseContainer),
+            (this.FindControl<PlotControl>("SmithPlotControl")!, vm.SmithContainer, new HoverMark()),
+            (this.FindControl<PlotControl>("MagnitudePlotControl")!, vm.MagnitudeContainer, new HoverMark()),
+            (this.FindControl<PlotControl>("PhasePlotControl")!, vm.PhaseContainer, new HoverMark()),
         ];
-        foreach (var (plot, container) in _hosted)
+        foreach (var (plot, container, mark) in _hosted)
         {
+            plot.Overlay = mark;
+            plot.AddHandler(PointerMovedEvent, (_, e) => OnPlotHover(plot, mark, e), RoutingStrategies.Bubble, handledEventsToo: true);
+            plot.AddHandler(PointerExitedEvent, (_, _) => ClearHover(plot, mark), RoutingStrategies.Bubble, handledEventsToo: true);
             plot.NextMarkerIndexProvider     = container.GetNextMarkerIndex;
             plot.FindMarkerInfoBoxVmProvider = container.FindMarkerInfoBoxVm;
             plot.ContainerProvider           = () => container;
@@ -224,7 +234,7 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
     private void SyncPlotContainers()
     {
         if (this.FindControl<ItemsControl>("InfoBoxLayer") is not { } layer) return;
-        foreach (var (plot, container) in _hosted)
+        foreach (var (plot, container, _) in _hosted)
         {
             if (plot.Bounds.Width < 1 || plot.Bounds.Height < 1) continue;
             if (plot.TranslatePoint(default, layer) is not { } origin) continue;
@@ -248,7 +258,152 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
         Vm.PlotHost.SelectOnly((MarkerInfoBoxViewModel?)null);
     }
 
+    /// <summary>A hidden plot's row takes nothing, so whichever are on fill the pane and keep their order:
+    /// Smith, then magnitude, then phase.</summary>
+    private void ApplyPlotRows()
+    {
+        if (Vm is null || this.FindControl<Grid>("PlotGrid") is not { } grid || grid.RowDefinitions.Count < 3) return;
+        static GridLength Row(bool on) => on ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+        grid.RowDefinitions[0].Height = Row(Vm.ShowSmith);
+        grid.RowDefinitions[1].Height = Row(Vm.ShowMagnitude);
+        grid.RowDefinitions[2].Height = Row(Vm.ShowPhase);
+    }
+
+    // ── hover readout ────────────────────────────────────────────────────────
+
+    /// <summary>How close the pointer must be, in pixels, before a point of the trace is named. A rectangular
+    /// plot also accepts a point near the cursor's frequency, because the value being read is the one at that
+    /// frequency and the cursor is rarely on the stroke itself.</summary>
+    private const double HoverReachPx = 18;
+    private const double HoverFrequencyPx = 22;
+    private const double HoverValuePx = 56;
+
+    private void OnPlotHover(PlotControl plot, HoverMark mark, PointerEventArgs e)
+    {
+        if (plot.Plot is null || e.GetCurrentPoint(plot).Properties.IsLeftButtonPressed)
+        {
+            ClearHover(plot, mark);
+            return;
+        }
+        var pos = e.GetPosition(plot);
+        var tf = PlotRenderer.BuildTransforms(plot.Plot, (plot.Bounds.Width, plot.Bounds.Height));
+
+        Trace? hit = null;
+        int index = -1;
+        var world = default(Vector2);
+        bool onStroke = false;
+        double best = HoverReachPx;
+        double bestAlong = HoverValuePx;
+        foreach (var trace in plot.Plot.Traces)
+        {
+            for (int i = 0; i < trace.Points.Count; i++)
+            {
+                var c = tf.ToCanvas(trace.Points[i].X, trace.Points[i].Y, trace.UseSecondaryAxis);
+                double dx = c.X - pos.X, dy = c.Y - pos.Y;
+                double d = Math.Sqrt(dx * dx + dy * dy);
+                if (d < best)
+                {
+                    best = d; onStroke = true;
+                    hit = trace; index = i; world = trace.Points[i];
+                }
+                else if (!onStroke && plot.Plot.PlotType.IsRect()
+                         && Math.Abs(dx) < HoverFrequencyPx && Math.Abs(dy) < bestAlong)
+                {
+                    bestAlong = Math.Abs(dy);
+                    hit = trace; index = i; world = trace.Points[i];
+                }
+            }
+        }
+
+        foreach (var (other, _, otherMark) in _hosted)
+            if (!ReferenceEquals(other, plot) && otherMark.Move(null, default)) other.InvalidateVisual();
+
+        if (hit is null)
+        {
+            if (mark.Move(null, default)) plot.InvalidateVisual();
+            HideReadout();
+            return;
+        }
+        if (mark.Move(world, hit.Properties.LineColor)) plot.InvalidateVisual();
+        ShowReadout(plot, pos, Readout(plot.Plot, hit, index));
+    }
+
+    private void ClearHover(PlotControl plot, HoverMark mark)
+    {
+        if (mark.Move(null, default)) plot.InvalidateVisual();
+        HideReadout();
+    }
+
+    /// <summary>The marker box's own sentence for this sample, and the frequency it sits at.</summary>
+    private static string Readout(Plot plot, Trace trace, int index)
+    {
+        double hz = trace.Data.Frequencies.Length == trace.Points.Count
+            ? trace.Data.Frequencies[index]
+            : plot.PlotType.IsRect() ? trace.Points[index].X / plot.FreqUnits.Scale() : double.NaN;
+        string value = trace.GetMarkerValString(new Marker(trace, double.IsFinite(hz) ? hz : 0, false, false, 0), false);
+        return double.IsFinite(hz) ? value + "\n" + SParameterViewerPreset.Hz(hz) : value;
+    }
+
+    private void ShowReadout(PlotControl plot, Point at, string text)
+    {
+        var layer = this.FindControl<Canvas>("HoverLayer");
+        var box = this.FindControl<Border>("HoverReadout");
+        var label = this.FindControl<TextBlock>("HoverReadoutText");
+        if (layer is null || box is null || label is null) return;
+        if (plot.TranslatePoint(at, layer) is not { } origin) return;
+
+        label.Text = text;
+        box.IsVisible = true;
+        double w = box.Bounds.Width > 1 ? box.Bounds.Width : 160;
+        double h = box.Bounds.Height > 1 ? box.Bounds.Height : 40;
+        double x = origin.X + 16, y = origin.Y + 16;
+        if (x + w > layer.Bounds.Width) x = origin.X - w - 10;
+        if (y + h > layer.Bounds.Height) y = origin.Y - h - 10;
+        Canvas.SetLeft(box, Math.Max(0, x));
+        Canvas.SetTop(box, Math.Max(0, y));
+    }
+
+    private void HideReadout()
+    {
+        if (this.FindControl<Border>("HoverReadout") is { } box) box.IsVisible = false;
+    }
+
     private void OnHelpClick(object? sender, RoutedEventArgs e) => DocLauncher.Open("reference/sparameter-viewer.html");
 
     private void OnClose(object? sender, RoutedEventArgs e) => Close();
+}
+
+/// <summary>
+/// The dot a hover leaves on the nearest sample. It draws and nothing else: a press is the plot's own,
+/// so panning and marker placement are unchanged.
+/// </summary>
+sealed class HoverMark : IPlotOverlay
+{
+    private Vector2? _at;
+    private SKColor _color;
+
+    /// <summary>Moves the dot. False when it was already there, so a pointer crossing the plot does not
+    /// repaint it on every pixel.</summary>
+    public bool Move(Vector2? at, SKColor color)
+    {
+        if (_at == at && _color == color) return false;
+        _at = at;
+        _color = color;
+        return true;
+    }
+
+    public void Draw(SKCanvas canvas, TransformSet tf, RenderTheme theme)
+    {
+        if (_at is not { } at) return;
+        var c = tf.ToCanvas(at.X, at.Y, false);
+        using var fill = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = _color };
+        using var ring = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.6f, Color = SKColors.White };
+        canvas.DrawCircle(c.X, c.Y, 5f, fill);
+        canvas.DrawCircle(c.X, c.Y, 5f, ring);
+    }
+
+    public object? HitTest(double canvasX, double canvasY, TransformSet tf) => null;
+    public void DragBegin(object handle) { }
+    public void DragTo(Complex gammaWorld) { }
+    public void DragEnd(bool cancelled) { }
 }

@@ -209,6 +209,28 @@ public sealed class SParameterViewerTests : IDisposable
     // ── the window's view model ──────────────────────────────────────────────
 
     [Fact]
+    public void TheLastPlotStaysOn()
+    {
+        var vm = new SParameterViewerViewModel();
+        vm.ShowMagnitude = false;
+        vm.ShowPhase = false;
+        vm.ShowSmith = false;
+        Assert.True(vm.ShowSmith);
+        Assert.False(vm.ShowMagnitude);
+        Assert.False(vm.ShowPhase);
+    }
+
+    [Fact]
+    public void ACommentCountCarriesTheLines()
+    {
+        string path = Path.Combine(_dir, "noted.s1p");
+        File.WriteAllText(path, "! measured on the bench\n! fixture subtracted\n# GHz S RI R 50\n1 0.1 0.2\n2 0.1 0.3\n");
+        var source = Read(path);
+        Assert.Equal("2 lines", SParameterViewerPreset.FileFacts(source.Facts).Single(r => r.Label == "Comments").Value);
+        Assert.Equal("measured on the bench\nfixture subtracted", SParameterViewerViewModel.CommentText(source));
+    }
+
+    [Fact]
     public void TheViewModelShowsTheFile_ItsTermsAndThePlots()
     {
         var vm = new SParameterViewerViewModel();

@@ -31,9 +31,9 @@ what `circuitrf snp -o x.cdd` writes, because both call `SParameterViewerPreset.
 - A Touchstone file in the Workspace, bookmarked or loose inside the folder: **Open in S-Parameter
   Viewer** on its menu, and a double-click. The double-click opens on the mouse-up, the rule a `.crail`
   already follows, because a window shown from inside the press comes up behind the workspace.
-- A placed **S1P / S2P / S3P / S4P / SnP**. All five are `SymbolKind.Snp`, so one **View** button in the
-  parameter panel covers them. It enables once the `File` parameter resolves — through `SnpPathPolicy`,
-  the resolver **Show** already uses — to a file that is there.
+- A placed **S1P / S2P / S3P / S4P / SnP**. All five are `SymbolKind.Snp`, so the panel's own **Show**
+  button covers them. It enables once the `File` parameter resolves — through `SnpPathPolicy` — to a
+  file that is there, and opens this viewer. There is no second button: the file row is already full.
 - A Touchstone row of a Data Display's dataset list, the same **View**.
 
 ## The split

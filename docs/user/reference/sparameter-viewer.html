@@ -45,6 +45,7 @@
 <li><a href="#opening">Opening the viewer</a></li>
 <li><a href="#file">What the file states</a></li>
 <li><a href="#plots">The three plots</a></li>
+<li><a href="#plots-shown">Choosing the plots</a></li>
 <li><a href="#terms">Choosing which terms to draw</a></li>
 <li><a href="#findings">Findings</a></li>
 <li><a href="#saving">Saving it as a Data Display</a></li>
@@ -62,8 +63,8 @@ that window forward.</p>
 right-click menu, and double-clicking the file does it too — for a file you imported and for a
 loose <code>.sNp</code> sitting in the workspace folder.</p>
 <p>A placed <a href="components.html#snp">SnP</a> component — the library's <strong>S1P</strong>, <strong>S2P</strong>, <strong>S3P</strong>, <strong>S4P</strong>
-and <strong>SnP</strong> are all this one component — grows a <strong>View</strong> button beside <strong>Browse…</strong> and
-<strong>Show</strong> once its file is chosen and is there. <strong>View</strong> opens the viewer on that file.</p>
+and <strong>SnP</strong> are all this one component — enables <strong>Show</strong>, beside <strong>Browse…</strong>, once its
+file is chosen and is there. <strong>Show</strong> opens the viewer on that file.</p>
 <p>A Data Display's dataset list offers the same <strong>View</strong> on any row whose file is a Touchstone file.</p>
 <h2 id="file">What the file states</h2>
 <p>The left pane reads the file back to you, which is most of the point of opening it:</p>
@@ -107,6 +108,32 @@ and <strong>SnP</strong> are all this one component — grows a <strong>View</st
 </table>
 <p>The plots follow the file. Nothing is resampled and nothing is interpolated: each curve joins the
 file's own points, and <strong>Show samples</strong> puts a dot on every one of them so the step can be seen.</p>
+<p><strong>Comments</strong> reads as a count. Hover it and the lines themselves pop up.</p>
+<h2 id="plots-shown">Choosing the plots</h2>
+<p>Three buttons sit above the plots: the Smith chart, magnitude and phase. Each turns its plot on or
+off, and the last one stays on.</p>
+<table>
+<thead>
+<tr>
+<th>On</th>
+<th>The pane shows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>One</td>
+<td>That plot, filling the window.</td>
+</tr>
+<tr>
+<td>The Smith chart and one of the others</td>
+<td>The Smith chart on top, the other below it.</td>
+</tr>
+<tr>
+<td>All three</td>
+<td>Smith chart, then magnitude, then phase, from top to bottom.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="plots">The three plots</h2>
 <p><strong>Reflection</strong> is a Smith chart of the reflection at each port — S11, S22 and so on.</p>
 <p><strong>Magnitude</strong> is every ticked term in dB against frequency, and <strong>Phase</strong> is the same terms in degrees.
@@ -115,8 +142,9 @@ out to the nearest round number, and a logarithmically swept file is drawn on a 
 phase axis is fixed at ±180°, which is the whole of what a wrapped phase can be.</p>
 <p>The axis unit follows the span. A file written in Hz that runs from 1 to 5 GHz reads in GHz, because
 an axis of 1E+09 to 5E+09 says the same thing badly.</p>
-<p>Markers work as they do in a Data Display: double-click a trace to drop one, drag it, and read it in
-its box. <strong>Delete</strong> removes the selected ones. Arrow keys step a marker one sample at a time.</p>
+<p>Hover a curve and a marker sits on the nearest sample, with its value and the frequency it was taken
+at in a small box beside the pointer. A double-click still drops a marker you can drag and keep, and
+<strong>Delete</strong> removes the selected ones. Arrow keys step a kept marker one sample at a time.</p>
 <p>A file of Y- or Z-parameters is drawn as S-parameters at the file's own reference, because a Smith
 chart of an admittance would not be a reflection. The file pane still says Y or Z, which is what the
 file is.</p>

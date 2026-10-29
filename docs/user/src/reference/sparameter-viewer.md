@@ -13,6 +13,7 @@ keywords: S-Parameter Viewer, Touchstone, s2p, sNp, SNP, SnP, S-parameters, Smit
 <li><a href="#opening">Opening the viewer</a></li>
 <li><a href="#file">What the file states</a></li>
 <li><a href="#plots">The three plots</a></li>
+<li><a href="#plots-shown">Choosing the plots</a></li>
 <li><a href="#terms">Choosing which terms to draw</a></li>
 <li><a href="#findings">Findings</a></li>
 <li><a href="#saving">Saving it as a Data Display</a></li>
@@ -34,8 +35,8 @@ right-click menu, and double-clicking the file does it too &mdash; for a file yo
 loose `.sNp` sitting in the workspace folder.
 
 A placed [SnP](components.html#snp) component &mdash; the library's **S1P**, **S2P**, **S3P**, **S4P**
-and **SnP** are all this one component &mdash; grows a **View** button beside **Browse&hellip;** and
-**Show** once its file is chosen and is there. **View** opens the viewer on that file.
+and **SnP** are all this one component &mdash; enables **Show**, beside **Browse&hellip;**, once its
+file is chosen and is there. **Show** opens the viewer on that file.
 
 A Data Display's dataset list offers the same **View** on any row whose file is a Touchstone file.
 
@@ -56,6 +57,19 @@ The left pane reads the file back to you, which is most of the point of opening 
 The plots follow the file. Nothing is resampled and nothing is interpolated: each curve joins the
 file's own points, and **Show samples** puts a dot on every one of them so the step can be seen.
 
+**Comments** reads as a count. Hover it and the lines themselves pop up.
+
+## Choosing the plots {#plots-shown}
+
+Three buttons sit above the plots: the Smith chart, magnitude and phase. Each turns its plot on or
+off, and the last one stays on.
+
+| On | The pane shows |
+|---|---|
+| One | That plot, filling the window. |
+| The Smith chart and one of the others | The Smith chart on top, the other below it. |
+| All three | Smith chart, then magnitude, then phase, from top to bottom. |
+
 ## The three plots {#plots}
 
 **Reflection** is a Smith chart of the reflection at each port &mdash; S11, S22 and so on.
@@ -68,8 +82,9 @@ phase axis is fixed at &plusmn;180&deg;, which is the whole of what a wrapped ph
 The axis unit follows the span. A file written in Hz that runs from 1 to 5 GHz reads in GHz, because
 an axis of 1E+09 to 5E+09 says the same thing badly.
 
-Markers work as they do in a Data Display: double-click a trace to drop one, drag it, and read it in
-its box. **Delete** removes the selected ones. Arrow keys step a marker one sample at a time.
+Hover a curve and a marker sits on the nearest sample, with its value and the frequency it was taken
+at in a small box beside the pointer. A double-click still drops a marker you can drag and keep, and
+**Delete** removes the selected ones. Arrow keys step a kept marker one sample at a time.
 
 A file of Y- or Z-parameters is drawn as S-parameters at the file's own reference, because a Smith
 chart of an admittance would not be a reflection. The file pane still says Y or Z, which is what the

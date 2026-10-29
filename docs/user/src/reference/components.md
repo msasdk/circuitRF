@@ -1199,7 +1199,7 @@ An N-port backed by a Touchstone (`.sNp`) file — measured or modelled S-parame
 circuit and interpolated onto the analysis sweep.
 
 - `NumPorts` — the port count. Hidden; it drives the symbol and the pin count.
-- `File` — the path to the Touchstone file. Once a file is chosen and is there, **View** opens it in the
+- `File` — the path to the Touchstone file. Once a file is chosen and is there, **Show** opens it in the
   [S-Parameter Viewer](sparameter-viewer.html).
 - `RefNode` — when true, expose a floating common reference pin (N+1 nets) instead of grounding each
   port.

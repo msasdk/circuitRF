@@ -16,8 +16,12 @@ using SkiaSharp;
 
 namespace CircuitRF.Ui.SParameters;
 
-/// <summary>One line of the file pane: a label and what the file states.</summary>
-public sealed record SParameterFactRow(string Label, string Value);
+/// <summary>One line of the file pane: a label, what the file states, and text a hover popup shows.</summary>
+public sealed record SParameterFactRow(string Label, string Value, string? Detail = null)
+{
+    /// <summary>True when <see cref="Detail"/> is there to pop up — the comment lines.</summary>
+    public bool HasDetail => Detail is { Length: > 0 };
+}
 
 /// <summary>One term of the matrix, ticked or not.</summary>
 public sealed partial class SParameterTermViewModel : ObservableObject
@@ -143,6 +147,29 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
     /// <summary>A dot at every point the file holds, so the step can be seen.</summary>
     [ObservableProperty] private bool _showSamples;
 
+    /// <summary>Which of the three plots the toolbar has on. At least one stays on: turning the last one off
+    /// turns it back, because a viewer with no plot is the empty state and that one already has a sentence.</summary>
+    [ObservableProperty] private bool _showSmith = true;
+    [ObservableProperty] private bool _showMagnitude = true;
+    [ObservableProperty] private bool _showPhase = true;
+
+    private bool _keepingAPlot;
+
+    partial void OnShowSmithChanged(bool value) => KeepAPlot(value, () => ShowSmith = true);
+    partial void OnShowMagnitudeChanged(bool value) => KeepAPlot(value, () => ShowMagnitude = true);
+    partial void OnShowPhaseChanged(bool value) => KeepAPlot(value, () => ShowPhase = true);
+
+    private void KeepAPlot(bool value, Action restore)
+    {
+        if (_keepingAPlot) return;
+        if (!value && !ShowSmith && !ShowMagnitude && !ShowPhase)
+        {
+            _keepingAPlot = true;
+            restore();
+            _keepingAPlot = false;
+        }
+    }
+
     /// <summary>The window title and its Window-menu entry.</summary>
     public string Title => FileName is { } name ? $"{ToolName} — {name}" : ToolName;
 
@@ -207,7 +234,9 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
 
         ErrorText = null;
         var f = source.Facts;
-        foreach (var (label, value) in SParameterViewerPreset.FileFacts(f)) Facts.Add(new SParameterFactRow(label, value));
+        string? comments = CommentText(source);
+        foreach (var (label, value) in SParameterViewerPreset.FileFacts(f))
+            Facts.Add(new SParameterFactRow(label, value, label == "Comments" ? comments : null));
         foreach (var d in source.Findings) Findings.Add(d.Render());
 
         var chosen = (keep ?? SParameterViewerPreset.DefaultSelection(f.Ports)).ToHashSet();
@@ -221,6 +250,13 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
     }
 
     // ── the terms ─────────────────────────────────────────────────────────────
+
+    /// <summary>The file's comment lines, one per row, or null when it carries none.</summary>
+    public static string? CommentText(TouchstoneSource source)
+    {
+        var lines = source.AsRead.Comments.Select(c => c.Text).Where(t => t.Trim().Length > 0).ToList();
+        return lines.Count == 0 ? null : string.Join("\n", lines);
+    }
 
     /// <summary>The ticked terms, row-major.</summary>
     public IReadOnlyList<SParameterViewerPreset.Term> Selection() => [.. Terms.Where(t => t.IsChecked).Select(t => t.Term)];

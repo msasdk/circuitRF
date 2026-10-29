@@ -185,7 +185,7 @@ public static class SParameterViewerPreset
             ("Reference", Reference(f)),
             ("Noise data", f.NoisePoints > 0 ? $"{f.NoisePoints} point(s)" : "none"),
         };
-        if (f.CommentLines > 0) rows.Add(("Comments", $"{f.CommentLines} line(s)"));
+        if (f.CommentLines > 0) rows.Add(("Comments", f.CommentLines == 1 ? "1 line" : $"{f.CommentLines} lines"));
         return rows;
     }
 

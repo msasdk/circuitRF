@@ -68,9 +68,8 @@ public sealed partial class ParameterEditorViewModel : ObservableObject
         AddGroupCommand       = new RelayCommand(AddGroup);
         RemoveTopGroupCommand = new RelayCommand(RemoveTopGroup, () => _canRemoveTopGroup);
         PickSnpFileCommand    = new AsyncRelayCommand(PickFileAsync);
-        ShowSnpFileCommand    = new AsyncRelayCommand(RevealSnpFileAsync,
-            () => !string.IsNullOrWhiteSpace(SnpFilePath));
-        ViewSnpFileCommand    = new RelayCommand(ViewSnpFile, () => ResolvedSnpFile() is not null);
+        // Show opens the file in the S-Parameter Viewer. Enabled once the chosen file is there.
+        ShowSnpFileCommand    = new RelayCommand(ShowSnpFile, () => ResolvedSnpFile() is not null);
         OpenCvEditorCommand   = new AsyncRelayCommand(OpenCvEditorAsync);
         PickSpiceModelFileCommand = new AsyncRelayCommand(PickSpiceModelFileAsync);
         ShowSpiceModelFileCommand = new AsyncRelayCommand(RevealSpiceModelFileAsync,
@@ -591,13 +590,10 @@ public sealed partial class ParameterEditorViewModel : ObservableObject
     public static string[] SnpInterpDomainOptions { get; } = ["RI", "MA"];
 
     public IAsyncRelayCommand PickSnpFileCommand    { get; private set; } = null!;
-    public IAsyncRelayCommand ShowSnpFileCommand    { get; private set; } = null!;
+    public IRelayCommand ShowSnpFileCommand { get; private set; } = null!;
 
-    /// <summary>Opens the chosen Touchstone file in the S-Parameter Viewer. Enabled once a file is chosen that is there.</summary>
-    public IRelayCommand ViewSnpFileCommand { get; private set; } = null!;
-
-    /// <summary>Raised by <see cref="ViewSnpFileCommand"/> with the file's absolute path; the view opens the window,
-    /// since only it knows the owner.</summary>
+    /// <summary>Raised by <see cref="ShowSnpFileCommand"/> with the file's absolute path; the view opens the
+    /// S-Parameter Viewer, since only it knows the window that owns this panel.</summary>
     public event Action<string>? OpenSnpViewerRequested;
 
     [ObservableProperty] private string _snpFilePath         = "";
@@ -608,11 +604,7 @@ public sealed partial class ParameterEditorViewModel : ObservableObject
     [ObservableProperty] private int    _snpInterpDomainIndex = 1; // MA
     [ObservableProperty] private string _snpPortCountText    = "";
 
-    partial void OnSnpFilePathChanged(string value)
-    {
-        ShowSnpFileCommand.NotifyCanExecuteChanged();
-        ViewSnpFileCommand.NotifyCanExecuteChanged();
-    }
+    partial void OnSnpFilePathChanged(string value) => ShowSnpFileCommand.NotifyCanExecuteChanged();
 
     /// <summary>The File parameter as the engine will open it — the one resolver Show uses — or null when none is
     /// chosen or it is not there.</summary>
@@ -622,7 +614,8 @@ public sealed partial class ParameterEditorViewModel : ObservableObject
            && System.IO.File.Exists(path)
             ? path : null;
 
-    private void ViewSnpFile()
+    /// <summary>Show: the S-Parameter Viewer on the chosen file.</summary>
+    private void ShowSnpFile()
     {
         if (ResolvedSnpFile() is { } path) OpenSnpViewerRequested?.Invoke(path);
     }
@@ -682,16 +675,6 @@ public sealed partial class ParameterEditorViewModel : ObservableObject
         }
 
         _schematicVm.Execute(new SetParametersCommand(_schematicVm.EditModel, _target, newParams));
-    }
-
-    private async Task RevealSnpFileAsync()
-    {
-        if (RevealFileAsync is null) return;
-        // One resolver, so Show reveals exactly the file the port-count sniff read and the engine
-        // will open. This used to spell the same rule out inline, minus the no-workspace fallback.
-        if (SnpPathPolicy.Resolve(SnpFilePath, _schematicVm?.WorkspaceRoot,
-                                  _schematicVm?.EditModel.SchematicDirectory) is not { } path) return;
-        await RevealFileAsync(path);
     }
 
     private void ApplySnpParam(string name, string value)

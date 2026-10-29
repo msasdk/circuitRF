@@ -83,6 +83,26 @@
             <Setter Property="Padding"  Value="7,2"/>
             <Setter Property="Margin"   Value="0,0,4,4"/>
         </Style>
+        <!-- The plot chooser: the checked one is the accent, and its glyph follows. -->
+        <Style Selector="ToggleButton.plotpick">
+            <Setter Property="Background"      Value="Transparent"/>
+            <Setter Property="BorderBrush"     Value="{DynamicResource SystemBaseMediumLowColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius"    Value="3"/>
+            <Setter Property="Padding"         Value="7,3"/>
+            <Setter Property="Margin"          Value="0,0,4,0"/>
+        </Style>
+        <Style Selector="ToggleButton.plotpick:checked /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ToggleButton.plotpick:checked ddc|PlotTypeGlyphControl">
+            <Setter Property="Stroke" Value="White"/>
+        </Style>
+        <Style Selector="SelectableTextBlock.comment">
+            <Setter Property="TextDecorations" Value="Underline"/>
+            <Setter Property="Cursor"          Value="Help"/>
+        </Style>
     </Window.Styles>
 
     <Grid RowDefinitions="*,Auto" Margin="4">
@@ -143,7 +163,16 @@
                                                 <Grid ColumnDefinitions="Auto,*" Margin="0,1">
                                                     <TextBlock Classes="lbl" Text="{Binding Label}" Margin="0,0,10,0"/>
                                                     <SelectableTextBlock Grid.Column="1" FontSize="12" TextAlignment="Right" TextWrapping="Wrap"
-                                                                         HorizontalAlignment="Right" VerticalAlignment="Center" Text="{Binding Value}"/>
+                                                                         HorizontalAlignment="Right" VerticalAlignment="Center" Text="{Binding Value}"
+                                                                         IsVisible="{Binding !HasDetail}"/>
+                                                    <!-- The count is the hover target: the popup is the comment text. -->
+                                                    <SelectableTextBlock Grid.Column="1" FontSize="12" TextAlignment="Right" TextWrapping="Wrap"
+                                                                         HorizontalAlignment="Right" VerticalAlignment="Center" Text="{Binding Value}"
+                                                                         Classes="comment" IsVisible="{Binding HasDetail}">
+                                                        <ToolTip.Tip>
+                                                            <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" MaxWidth="420" FontSize="12"/>
+                                                        </ToolTip.Tip>
+                                                    </SelectableTextBlock>
                                                 </Grid>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
@@ -226,21 +255,44 @@
                         </Button>
                     </StackPanel>
 
-                    <Grid IsVisible="{Binding HasFile}" ColumnDefinitions="*,1.3*" RowDefinitions="*,*">
-                        <ctl:AspectRatioPanel Grid.RowSpan="2" Ratio="1" VerticalAlignment="Center" Margin="0,2,6,2">
-                            <ddc:PlotControl Name="SmithPlotControl" Plot="{Binding SmithPlot}" Library="{Binding PlotHost.Library}"
-                                             CanDeletePlot="False" CanEditPlotProperties="False"/>
-                        </ctl:AspectRatioPanel>
-                        <ctl:AspectRatioPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,2">
-                            <ddc:PlotControl Name="MagnitudePlotControl" Plot="{Binding MagnitudePlot}" Library="{Binding PlotHost.Library}"
-                                             CanDeletePlot="False" CanEditPlotProperties="False"/>
-                        </ctl:AspectRatioPanel>
-                        <ctl:AspectRatioPanel Grid.Column="1" Grid.Row="1" VerticalAlignment="Center" Margin="0,2">
-                            <ddc:PlotControl Name="PhasePlotControl" Plot="{Binding PhasePlot}" Library="{Binding PlotHost.Library}"
-                                             CanDeletePlot="False" CanEditPlotProperties="False"/>
-                        </ctl:AspectRatioPanel>
+                    <Grid IsVisible="{Binding HasFile}" RowDefinitions="Auto,*">
+                        <!-- Which plots: one fills the pane, two stack with the Smith chart on top, three go
+                             Smith, magnitude, phase from top to bottom. -->
+                        <StackPanel Orientation="Horizontal" Margin="2,0,0,4">
+                            <ToggleButton Classes="plotpick" IsChecked="{Binding ShowSmith}" ToolTip.Tip="Smith chart — the reflections">
+                                <ddc:PlotTypeGlyphControl Kind="Smith" Width="16" Height="16"
+                                                          Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            </ToggleButton>
+                            <ToggleButton Classes="plotpick" IsChecked="{Binding ShowMagnitude}" ToolTip.Tip="Magnitude, dB against frequency">
+                                <mi:MaterialIcon Kind="ChartBellCurve" Width="16" Height="16"/>
+                            </ToggleButton>
+                            <ToggleButton Classes="plotpick" IsChecked="{Binding ShowPhase}" ToolTip.Tip="Phase, degrees against frequency">
+                                <mi:MaterialIcon Kind="SineWave" Width="16" Height="16"/>
+                            </ToggleButton>
+                        </StackPanel>
+                        <Grid Name="PlotGrid" Grid.Row="1" RowDefinitions="*,*,*">
+                        <ddc:PlotControl Name="SmithPlotControl" Grid.Row="0" Margin="0,2"
+                                         Plot="{Binding SmithPlot}" Library="{Binding PlotHost.Library}"
+                                         CanDeletePlot="False" CanEditPlotProperties="False"
+                                         IsVisible="{Binding ShowSmith}"/>
+                        <ddc:PlotControl Name="MagnitudePlotControl" Grid.Row="1" Margin="0,2"
+                                         Plot="{Binding MagnitudePlot}" Library="{Binding PlotHost.Library}"
+                                         CanDeletePlot="False" CanEditPlotProperties="False"
+                                         IsVisible="{Binding ShowMagnitude}"/>
+                        <ddc:PlotControl Name="PhasePlotControl" Grid.Row="2" Margin="0,2"
+                                         Plot="{Binding PhasePlot}" Library="{Binding PlotHost.Library}"
+                                         CanDeletePlot="False" CanEditPlotProperties="False"
+                                         IsVisible="{Binding ShowPhase}"/>
+                        <!-- The hover readout. It takes no pointer, so the plot under it keeps the move. -->
+                        <Canvas Name="HoverLayer" Grid.RowSpan="3" IsHitTestVisible="False">
+                            <Border Name="HoverReadout" Background="{DynamicResource SystemChromeMediumColor}"
+                                    BorderBrush="{DynamicResource CrfTileBorderBrush}" BorderThickness="1"
+                                    CornerRadius="4" Padding="6,3" IsVisible="False">
+                                <TextBlock Name="HoverReadoutText" FontSize="12"/>
+                            </Border>
+                        </Canvas>
                         <!-- Marker info boxes: the Data Display's own overlay, click-through (no Background) except on a box. -->
-                        <ItemsControl Name="InfoBoxLayer" Grid.RowSpan="2" Grid.ColumnSpan="2" Background="{x:Null}">
+                        <ItemsControl Name="InfoBoxLayer" Grid.RowSpan="3" Background="{x:Null}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <Canvas Background="{x:Null}"/>
@@ -258,6 +310,7 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+                        </Grid>
                     </Grid>
                 </Grid>
             </Border>
