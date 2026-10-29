@@ -233,6 +233,10 @@ return JsonRun.Finish(Dispatch(JsonRun.Verb) is { } run ? run(args[1..]) : Unkno
     // CircuitRF.Render's, which is what makes a matching network gateable in CI rather than only
     // draggable in a window (smith-chart.md §9, P3).
     "smith"  => CircuitRF.Cli.Smith.Run,
+    // The S-Parameter Viewer, with no display. It owns no reading and no drawing: the file is read
+    // through the TouchstoneSource the window reads it through, the plots are SParameterViewerPreset's
+    // and the page is RenderDataDisplay's.
+    "snp"    => CircuitRF.Cli.Snp.Run,
     "convert" => CircuitRF.Cli.LayoutConvert.Run,
     // R-aut3-13: `new` is ONE verb with a noun, not three — the surface has a standing cost, and
     // adding `new schematic` later is a noun rather than a fourth top-level verb.
@@ -2703,6 +2707,7 @@ static int PrintHelp()
     Console.WriteLine("           (the Model Composer: a FET model or a passive cell from data; exit 3 = a check failed)");
     Console.WriteLine("  rail   <file.crail> (railRF: the DC drop, the ranked breakdown, the vias)");
     Console.WriteLine("  smith  <file.csmith> (the matching cascade: the reading, and the walk node by node)");
+    Console.WriteLine("  snp    <file.sNp>    (the S-Parameter Viewer: what the file states, and its Smith, dB and phase plots)");
     Console.WriteLine("  elab   <file.cnl|.csch>   (dump elaborated netlist)");
     Console.WriteLine("  netlist <path.csch> [-o out.cnl]  (the extraction Simulate performs)");
     Console.WriteLine("  convert <in> -o <out>  (layout interchange: any format to any other)");
@@ -2770,6 +2775,15 @@ static int PrintHelp()
     Console.WriteLine("  -o out.s1p              the load reflection coefficient as Touchstone");
     Console.WriteLine("  -o out.{svg,pdf,png}    the chart, drawn by the renderer the window draws with");
     Console.WriteLine("  --size WxH  --scale N | --dpi N  --background opaque|transparent  --dark");
+    Console.WriteLine();
+    Console.WriteLine("snp options:");
+    Console.WriteLine("  --params S11,S21|all|reflections|default   the terms plotted. Default: every term up to");
+    Console.WriteLine("                          4 ports, else the reflections and each S(i+1,i).");
+    Console.WriteLine("  --samples               a dot at every point the file holds");
+    Console.WriteLine("  -o out.{svg,pdf,png}    the viewer's three plots, drawn by the renderer the window draws with");
+    Console.WriteLine("  -o out.cdd              the same plots as a Data Display");
+    Console.WriteLine("  --size WxH  --scale N | --dpi N  --background opaque|transparent  --dark");
+    Console.WriteLine("                          Exit 1 when the file has a defect, after writing.");
     Console.WriteLine();
     Console.WriteLine("lvs options:   <path> is a cell folder, a workspace, a .clay or a .csch");
     Console.WriteLine("  --flat                  every placed cell as a leaf; nothing is descended into");

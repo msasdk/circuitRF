@@ -190,7 +190,9 @@ namespace RfCore.Export
         [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         IReadOnlyList<ReviewCheckJson>? ReviewChecks = null,
         [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        ScratchJson? Scratch = null);
+        ScratchJson? Scratch = null,
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        SnpReportJson? Snp = null);
 
     /// <summary>
     /// Where an <c>em</c> run put its temporary files — so a caller can tell which disk a run filled, or why it was refused.
@@ -833,6 +835,46 @@ namespace RfCore.Export
         IReadOnlyList<SmithNodeJson>  Nodes,
         [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         SmithBandJson?                Band);
+
+    /// <summary>
+    /// What <c>snp</c> read — the S-Parameter Viewer's file pane, and which terms it plotted.
+    /// </summary>
+    /// <param name="ExtensionPorts">The port count the file name claims; absent when it claims none.</param>
+    /// <param name="Grid"><c>singlePoint</c>, <c>uniform</c>, <c>logarithmic</c> or <c>irregular</c>.</param>
+    /// <param name="StepHz">The constant step of a uniform grid; absent otherwise.</param>
+    /// <param name="PointsPerDecade">The density of a logarithmic grid; absent otherwise.</param>
+    /// <param name="FirstNonIncreasingPoint">1-based point at which the frequencies stop increasing; absent
+    /// when they never do.</param>
+    /// <param name="Z0">The declared reference as <c>[re, im]</c> ohms.</param>
+    /// <param name="Z0PerPort">Per-port references when the file states them.</param>
+    /// <param name="Plotted">The terms drawn, as named on the plots (<c>S21</c>, or <c>S(10,1)</c> from ten ports).</param>
+    public sealed record SnpReportJson(
+        string                   File,
+        int                      Ports,
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        int?                     ExtensionPorts,
+        string                   Type,
+        string                   Format,
+        string                   FrequencyUnit,
+        int                      Points,
+        double                   FirstHz,
+        double                   LastHz,
+        string                   Grid,
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        double?                  StepHz,
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        double?                  PointsPerDecade,
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        double?                  SmallestStepHz,
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        double?                  LargestStepHz,
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        int?                     FirstNonIncreasingPoint,
+        double[]                 Z0,
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        IReadOnlyList<double[]>? Z0PerPort,
+        int                      NoisePoints,
+        IReadOnlyList<string>    Plotted);
 
     // ── `opt` / MCP `run analysis=optimize`: what the optimizer found (brief-tuneopt-11 R-to11-2) ──
     //

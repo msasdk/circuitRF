@@ -3918,6 +3918,38 @@ internal static class CliDiagnostics
         "smith.cancelled", DiagnosticSeverity.Error,
         "smith: cancelled. Nothing was written.");
 
+    // ── snp (the S-Parameter Viewer, headless) ───────────────────────────────
+    //
+    // Refusals of the verb's own arguments only. What the FILE says about itself is
+    // RfCore.Data.TouchstoneDiagnostics', the sentences the viewer window shows.
+
+    public static Diagnostic SnpPathRequired() => new(
+        "snp.args.path-required", DiagnosticSeverity.Error,
+        "snp: a path is required — a Touchstone file (.s1p, .s2p … .sNp).");
+
+    public static Diagnostic SnpPathNotFound(string path) => Diagnostic.Create(
+        "snp.path.not-found", DiagnosticSeverity.Error,
+        "No such file: {path}", ("path", path));
+
+    /// <summary>Refused BY KIND, as `smith` refuses, so a `.csch` is named as a schematic.</summary>
+    public static Diagnostic SnpNotATouchstone(string path, string kind) => Diagnostic.Create(
+        "snp.path.not-touchstone", DiagnosticSeverity.Error,
+        "snp: '{path}' is a {kind}, not a Touchstone file. The S-Parameter Viewer reads .s1p, .s2p … .sNp.",
+        ("path", path), ("kind", kind));
+
+    public static Diagnostic SnpUnknownOutputFormat(string path, string extension) => Diagnostic.Create(
+        "snp.output.unknown-format", DiagnosticSeverity.Error,
+        "snp: '{path}' has extension '{extension}', which this verb does not write — it writes .svg, .pdf, .png "
+      + "and .cdd (a Data Display of the same plots).", ("path", path), ("extension", extension));
+
+    public static Diagnostic SnpWriteFailed(string path, string why) => Diagnostic.Create(
+        "snp.output.write-failed", DiagnosticSeverity.Error,
+        "snp: '{path}' was not written: {why}", ("path", path), ("why", why));
+
+    public static Diagnostic SnpCancelled() => new(
+        "snp.cancelled", DiagnosticSeverity.Error,
+        "snp: cancelled. Nothing was written.");
+
     // ── lvs (brief-lvs-11-cli-verb.md) ───────────────────────────────────────
     //
     // Every id here is a REFUSAL of this verb's own — an argument it cannot read, a path it cannot

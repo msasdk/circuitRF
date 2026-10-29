@@ -145,6 +145,10 @@ internal static class JsonRun
     /// <see cref="Render"/> rather than a cube.</summary>
     public static SmithReportJson? Smith;
 
+    /// <summary>What <c>snp</c> read — the S-Parameter Viewer's file pane and the terms it plotted. It runs
+    /// no analysis and carries no DataSet, which is why it is its own payload, as <see cref="Smith"/> is.</summary>
+    public static SnpReportJson? Snp;
+
     /// <summary>What <c>lvs</c> compared and what it concluded (R-lvs11-3c) — a projection of
     /// <c>LvsRunResult</c> and nothing else. The findings themselves also travel as diagnostics,
     /// which is where a caller that does not care which cell produced what reads them; this carries
@@ -251,6 +255,7 @@ internal static class JsonRun
         Render              = null;
         Rail                = null;
         Smith               = null;
+        Snp                 = null;
         Lvs                 = null;
         Impedance           = null;
         Review              = null;
@@ -495,7 +500,7 @@ internal static class JsonRun
         // is about no document at all — so they are answered before the cube machinery, not folded
         // into it.
         if (Check is not null || Explain is not null || Document is not null || Reference is not null
-         || History is not null || Render is not null || Find is not null || Smith is not null
+         || History is not null || Render is not null || Find is not null || Smith is not null || Snp is not null
          || Lvs is not null || Impedance is not null || ImpedanceSurvey is not null || FieldPlots is not null
          || ImpedanceLine is not null || Solvers is not null || Optimize is not null || Yield is not null || Corners is not null
          || Center is not null || Doe is not null || Recognize is not null || StepImport is not null || ConvertImage is not null
@@ -506,7 +511,8 @@ internal static class JsonRun
                                      ImpedanceLine: ImpedanceLine, Solvers: Solvers, Optimize: Optimize,
                                      Yield: Yield, Corners: Corners, Center: Center, Doe: Doe,
                                      Recognize: Recognize, StepImport: StepImport, Convert: ConvertImage,
-                                     Model: Model, Library: Library, Review: Review, ReviewChecks: ReviewChecks);
+                                     Model: Model, Library: Library, Review: Review, ReviewChecks: ReviewChecks,
+                                     Snp: Snp);
 
         // `rail` is the one verb that carries a report AND a DataSet — the cubes are the field and
         // the report is the domain shape §2.4 asks for — so a refused run still answers with its
