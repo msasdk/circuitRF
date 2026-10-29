@@ -1,0 +1,363 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using CircuitRF.Diagnostics;
+using CircuitRF.Render.DataDisplay;
+using CircuitRF.Ui.DataDisplay.ViewModels;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using RfCore;
+using RfCore.Data;
+using SkiaSharp;
+
+namespace CircuitRF.Ui.SParameters;
+
+/// <summary>One line of the file pane: a label and what the file states.</summary>
+public sealed record SParameterFactRow(string Label, string Value);
+
+/// <summary>One term of the matrix, ticked or not.</summary>
+public sealed partial class SParameterTermViewModel : ObservableObject
+{
+    private readonly Action _changed;
+
+    public SParameterTermViewModel(SParameterViewerPreset.Term term, string name, bool isChecked, Action changed)
+    {
+        Term = term;
+        Name = name;
+        _isChecked = isChecked;
+        _changed = changed;
+    }
+
+    public SParameterViewerPreset.Term Term { get; }
+
+    public string Name { get; }
+
+    public bool IsReflection => Term.IsReflection;
+
+    private bool _isChecked;
+    private bool _quiet;
+
+    /// <summary>Ticked: drawn. Every change redraws, except one made by <see cref="SetQuietly"/>.</summary>
+    public bool IsChecked
+    {
+        get => _isChecked;
+        set
+        {
+            if (!SetProperty(ref _isChecked, value) || _quiet) return;
+            _changed();
+        }
+    }
+
+    /// <summary>The colour the term is drawn in, while it is drawn.</summary>
+    [ObservableProperty] private SKColor _color = SKColors.Transparent;
+
+    public string Tooltip => IsReflection
+        ? $"{Name}: the reflection at port {Term.Row + 1}. Drawn on all three plots."
+        : $"{Name}: port {Term.Col + 1} to port {Term.Row + 1}. Drawn on the magnitude and phase plots.";
+
+    /// <summary>Sets the tick without asking for a redraw — for the bulk choices, which redraw once.</summary>
+    internal void SetQuietly(bool value)
+    {
+        _quiet = true;
+        try { IsChecked = value; }
+        finally { _quiet = false; }
+    }
+}
+
+/// <summary>
+/// The S-Parameter Viewer: one Touchstone file, what it states about itself, and its reflections on a
+/// Smith chart with every chosen term in dB and in phase against frequency.
+/// </summary>
+/// <remarks>
+/// <b>It owns no reading, rule or plot.</b> The file is read through <see cref="TouchstoneSource"/>, the
+/// facts and findings are <see cref="TouchstoneFacts"/>' and the plots are <see cref="SParameterViewerPreset"/>'s,
+/// loaded through <see cref="PlotConfigLoader"/> — exactly what <c>circuitrf snp</c> draws, so a picture
+/// taken on a build machine is the one this window shows.
+///
+/// <para><b>The plots are hosted as the Signal Designer's are</b>: one <see cref="DataDisplayViewModel"/>
+/// with three containers, so markers, their info boxes, zoom and copy all work as in a Data Display. It is
+/// not a Data Display document; Save as Data Display writes one.</para>
+/// </remarks>
+public sealed partial class SParameterViewerViewModel : ObservableObject
+{
+    public const string ToolName = "S-Parameter Viewer";
+
+    private TouchstoneSource? _source;
+
+    public SParameterViewerViewModel()
+    {
+        SmithContainer     = PlotHost.AddPlot(PlotType.Smith, FreqUnit.GHz, left: 0, top: 0, width: 420, height: 420);
+        MagnitudeContainer = PlotHost.AddPlot(PlotType.Rect,  FreqUnit.GHz, left: 0, top: 420, width: 520, height: 321);
+        PhaseContainer     = PlotHost.AddPlot(PlotType.Rect,  FreqUnit.GHz, left: 0, top: 741, width: 520, height: 321);
+        PlotHost.SelectOnly((PlotContainerViewModel?)null);
+        Status = "Open a Touchstone file (.s1p … .sNp) to view it.";
+    }
+
+    // ── the plots ─────────────────────────────────────────────────────────────
+
+    public DataDisplayViewModel PlotHost { get; } = new(new DataSourceLibraryViewModel(), addEmptyPlot: false, selectEmptyPlot: false);
+    public PlotContainerViewModel SmithContainer { get; }
+    public PlotContainerViewModel MagnitudeContainer { get; }
+    public PlotContainerViewModel PhaseContainer { get; }
+    public Plot SmithPlot => SmithContainer.PlotVM.Plot;
+    public Plot MagnitudePlot => MagnitudeContainer.PlotVM.Plot;
+    public Plot PhasePlot => PhaseContainer.PlotVM.Plot;
+
+    /// <summary>Raised after the three plots' traces were replaced, so the window repaints them.</summary>
+    public event EventHandler? PlotsUpdated;
+
+    // ── the window's seams ────────────────────────────────────────────────────
+
+    /// <summary>Asks for a Touchstone file to open. Set by the window, which owns the picker.</summary>
+    public Func<Task<string?>>? PickFileAsync { get; set; }
+
+    /// <summary>Asks where to save a Data Display, given a suggested file name.</summary>
+    public Func<string, Task<string?>>? PickDisplayPathAsync { get; set; }
+
+    /// <summary>Opens a written <c>.cdd</c> in a workspace window, when the viewer was opened from one.</summary>
+    public Action<string>? OpenDataDisplay { get; set; }
+
+    // ── state ─────────────────────────────────────────────────────────────────
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Title), nameof(FileName), nameof(HasFile), nameof(IsEmpty))]
+    [NotifyCanExecuteChangedFor(nameof(ReloadCommand), nameof(SaveAsDataDisplayCommand))]
+    private string? _filePath;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEmpty))]
+    [NotifyCanExecuteChangedFor(nameof(OpenFileCommand), nameof(ReloadCommand), nameof(SaveAsDataDisplayCommand))]
+    private bool _isLoading;
+
+    /// <summary>Why the file could not be read; null while it could.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasError), nameof(IsEmpty))]
+    private string? _errorText;
+
+    [ObservableProperty] private string _status = "";
+
+    /// <summary>A dot at every point the file holds, so the step can be seen.</summary>
+    [ObservableProperty] private bool _showSamples;
+
+    /// <summary>The window title and its Window-menu entry.</summary>
+    public string Title => FileName is { } name ? $"{ToolName} — {name}" : ToolName;
+
+    public string? FileName => FilePath is null ? null : Path.GetFileName(FilePath);
+
+    /// <summary>A file is loaded and drawn.</summary>
+    public bool HasFile => FilePath is not null && _source is not null;
+
+    public bool HasError => ErrorText is not null;
+
+    /// <summary>Nothing opened yet: the empty state's invitation shows.</summary>
+    public bool IsEmpty => !HasFile && !HasError && !IsLoading;
+
+    public ObservableCollection<SParameterFactRow> Facts { get; } = [];
+
+    /// <summary>The file's defects, as their sentences.</summary>
+    public ObservableCollection<string> Findings { get; } = [];
+
+    public bool HasFindings => Findings.Count > 0;
+
+    public ObservableCollection<SParameterTermViewModel> Terms { get; } = [];
+
+    /// <summary>How many tick boxes a row of the term grid holds: one per port, up to six.</summary>
+    [ObservableProperty] private int _termColumns = 2;
+
+    partial void OnShowSamplesChanged(bool value) => Redraw();
+
+    // ── loading ───────────────────────────────────────────────────────────────
+
+    /// <summary>Reads <paramref name="path"/> and draws it. The read runs off the UI thread.</summary>
+    public async Task LoadAsync(string path)
+    {
+        string full = Path.GetFullPath(path);
+        IsLoading = true;
+        Status = $"Reading {Path.GetFileName(full)}…";
+        var (source, refusal) = await Task.Run(() => (TouchstoneSource.Read(full, out var why), why));
+        IsLoading = false;
+        Show(full, source, refusal);
+    }
+
+    /// <summary>The synchronous half of <see cref="LoadAsync"/>: puts a read file — or its refusal — on show.</summary>
+    internal void Show(string full, TouchstoneSource? source, Diagnostic? refusal)
+    {
+        var keep = _source is not null && string.Equals(_source.Path, full, StringComparison.OrdinalIgnoreCase)
+                 ? Selection() : null;
+
+        _source = source;
+        FilePath = full;
+        Facts.Clear();
+        Findings.Clear();
+        Terms.Clear();
+
+        if (source is null)
+        {
+            ErrorText = refusal?.Render() ?? $"'{Path.GetFileName(full)}' could not be read.";
+            Status = "Not shown: the file could not be read.";
+            ClearPlots();
+            OnPropertyChanged(nameof(HasFile));
+            OnPropertyChanged(nameof(HasFindings));
+            return;
+        }
+
+        ErrorText = null;
+        var f = source.Facts;
+        foreach (var (label, value) in SParameterViewerPreset.FileFacts(f)) Facts.Add(new SParameterFactRow(label, value));
+        foreach (var d in source.Findings) Findings.Add(d.Render());
+
+        var chosen = (keep ?? SParameterViewerPreset.DefaultSelection(f.Ports)).ToHashSet();
+        foreach (var t in SParameterViewerPreset.AllTerms(f.Ports))
+            Terms.Add(new SParameterTermViewModel(t, SParameterViewerPreset.Name(t, f.Ports), chosen.Contains(t), Redraw));
+        TermColumns = Math.Clamp(f.Ports, 1, 6);
+
+        OnPropertyChanged(nameof(HasFile));
+        OnPropertyChanged(nameof(HasFindings));
+        Redraw();
+    }
+
+    // ── the terms ─────────────────────────────────────────────────────────────
+
+    /// <summary>The ticked terms, row-major.</summary>
+    public IReadOnlyList<SParameterViewerPreset.Term> Selection() => [.. Terms.Where(t => t.IsChecked).Select(t => t.Term)];
+
+    [RelayCommand] private void SelectAll()         => Choose(_ => true);
+    [RelayCommand] private void SelectReflections() => Choose(t => t.IsReflection);
+    [RelayCommand] private void SelectNone()        => Choose(_ => false);
+
+    [RelayCommand]
+    private void SelectDefault()
+    {
+        if (_source is null) return;
+        var d = SParameterViewerPreset.DefaultSelection(_source.Facts.Ports).ToHashSet();
+        Choose(t => d.Contains(t.Term));
+    }
+
+    private void Choose(Func<SParameterTermViewModel, bool> pick)
+    {
+        foreach (var t in Terms) t.SetQuietly(pick(t));
+        Redraw();
+    }
+
+    // ── drawing ───────────────────────────────────────────────────────────────
+
+    /// <summary>Refills the three plots from the preset, keeping every marker on its term.</summary>
+    public void Redraw()
+    {
+        if (_source is null) return;
+        var selection = Selection();
+        foreach (var row in Terms)
+            row.Color = row.IsChecked
+                ? TraceProperties.ColorLUT[SParameterViewerPreset.ColorIndexOf(row.Term, selection)]
+                : SKColors.Transparent;
+
+        foreach (var composed in SParameterViewerPreset.Compose(_source, selection, ShowSamples))
+            Refill(ContainerOf(composed.Kind), composed.Config, _source);
+
+        int traces = selection.Count;
+        Status = selection.Count == 0
+            ? "No terms ticked: tick one under Parameters to draw it."
+            : $"{_source.Facts.FrequencyCount} points, {SParameterViewerPreset.Hz(_source.Facts.FirstFrequencyHz)} to {SParameterViewerPreset.Hz(_source.Facts.LastFrequencyHz)}"
+              + $" · {traces} term(s) drawn" + (Findings.Count > 0 ? $" · {Findings.Count} finding(s)" : " · no defects found");
+        PlotsUpdated?.Invoke(this, EventArgs.Empty);
+    }
+
+    private PlotContainerViewModel ContainerOf(SParameterViewerPreset.PlotKind kind) => kind switch
+    {
+        SParameterViewerPreset.PlotKind.Smith     => SmithContainer,
+        SParameterViewerPreset.PlotKind.Magnitude => MagnitudeContainer,
+        _                                         => PhaseContainer,
+    };
+
+    private static void Refill(PlotContainerViewModel container, PlotContainerConfig pc, TouchstoneSource source)
+    {
+        var plot = container.PlotVM.Plot;
+        var kept = new Dictionary<(int, int), List<Marker>>();
+        foreach (var t in plot.Traces.Where(t => t.Markers.Count > 0))
+            (kept.TryGetValue((t.Row, t.Col), out var list) ? list : kept[(t.Row, t.Col)] = []).AddRange(t.Markers);
+
+        plot.Traces.Clear();
+        if (plot.FreqUnits != pc.FreqUnit) plot.FreqUnits = pc.FreqUnit;
+        plot.CustomTitle    = pc.CustomTitle;
+        plot.CustomTitleOn  = pc.CustomTitleOn;
+        plot.CustomYLabel   = pc.CustomYLabel;
+        plot.CustomYLabelOn = pc.CustomYLabelOn;
+        plot.Legend         = pc.Legend;
+
+        foreach (var tc in pc.Traces)
+        {
+            if (PlotConfigLoader.LoadTrace(tc, pc.PlotType, pc.FreqUnit, source) is not { } trace) continue;
+            if (kept.Remove((trace.Row, trace.Col), out var markers)) trace.Markers.AddRange(markers);
+            plot.Traces.Add(trace);
+        }
+        PlotConfigLoader.RestoreAxes(plot, pc.Axes);
+        container.OnPlotChanged(container, EventArgs.Empty);
+        container.RequestPlotRedraw();
+    }
+
+    private void ClearPlots()
+    {
+        foreach (var c in new[] { SmithContainer, MagnitudeContainer, PhaseContainer })
+        {
+            c.PlotVM.Plot.Traces.Clear();
+            c.OnPlotChanged(c, EventArgs.Empty);
+            c.RequestPlotRedraw();
+        }
+        PlotsUpdated?.Invoke(this, EventArgs.Empty);
+    }
+
+    // ── commands ──────────────────────────────────────────────────────────────
+
+    private bool CanOpen() => !IsLoading;
+
+    [RelayCommand(CanExecute = nameof(CanOpen))]
+    private async Task OpenFile()
+    {
+        if (PickFileAsync is null || await PickFileAsync() is not { } path) return;
+        await LoadAsync(path);
+    }
+
+    private bool CanReload() => FilePath is not null && !IsLoading;
+
+    /// <summary>Reads the file again — after it was rewritten by a measurement or a run.</summary>
+    [RelayCommand(CanExecute = nameof(CanReload))]
+    private Task Reload() => LoadAsync(FilePath!);
+
+    private bool CanSave() => _source is not null && !IsLoading;
+
+    /// <summary>
+    /// Writes these plots as a Data Display (<c>.cdd</c>) — the document <c>circuitrf snp -o x.cdd</c>
+    /// writes — and opens it in the workspace the viewer came from, if any.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanSave))]
+    private async Task SaveAsDataDisplay()
+    {
+        if (_source is null || PickDisplayPathAsync is null) return;
+        if (await PickDisplayPathAsync(Path.GetFileNameWithoutExtension(_source.Path) + ".cdd") is not { } target) return;
+        var config = SParameterViewerPreset.Build(_source, Selection(), ShowSamples);
+        try
+        {
+            await File.WriteAllTextAsync(target, JsonSerializer.Serialize(config, DataDisplayJson.Options),
+                                         new System.Text.UTF8Encoding(false));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Status = $"Not saved: {ex.Message}";
+            return;
+        }
+        Status = $"Saved {Path.GetFileName(target)}.";
+        OpenDataDisplay?.Invoke(target);
+    }
+
+    /// <summary>Removes every selected marker, as Delete does in a Data Display; the three plots stay.</summary>
+    [RelayCommand]
+    public void DeleteSelectedMarkers()
+    {
+        foreach (var box in PlotHost.MarkerInfoBoxes.Where(b => b.IsSelected).ToList())
+            box.Container.RemoveMarkerWithUndo(box.Marker, box.Trace);
+    }
+}

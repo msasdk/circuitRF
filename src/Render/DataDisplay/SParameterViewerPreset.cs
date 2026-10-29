@@ -160,6 +160,67 @@ public static class SParameterViewerPreset
     private static IReadOnlyList<Term> Ordered(IEnumerable<Term> terms, int ports)
         => [.. terms.Distinct().OrderBy(t => t.Row * ports + t.Col)];
 
+    // ── the file pane ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// What the file states, one labelled line each — the viewer's file pane and <c>circuitrf snp</c>'s
+    /// report are both these lines, so a terminal and a window cannot spell a file differently.
+    /// </summary>
+    public static IReadOnlyList<(string Label, string Value)> FileFacts(TouchstoneFacts f)
+    {
+        var inv = CultureInfo.InvariantCulture;
+        var rows = new List<(string, string)>
+        {
+            ("Ports", f.ExtensionPorts is { } n && n != f.Ports ? $"{f.Ports} (the name says {n})" : f.Ports.ToString(inv)),
+            ("Parameters", $"{f.Type}, {f.Format} ({FormatName(f.Format)})"),
+            ("Unit", f.FrequencyUnit.ToString()),
+            ("Points", f.FrequencyCount.ToString(inv)),
+            ("Start", Hz(f.FirstFrequencyHz)),
+            ("Stop", Hz(f.LastFrequencyHz)),
+            ("Spacing", Spacing(f)),
+            ("Reference", Reference(f)),
+            ("Noise data", f.NoisePoints > 0 ? $"{f.NoisePoints} point(s)" : "none"),
+        };
+        if (f.CommentLines > 0) rows.Add(("Comments", $"{f.CommentLines} line(s)"));
+        return rows;
+    }
+
+    /// <summary>How the points are spaced, in words.</summary>
+    public static string Spacing(TouchstoneFacts f) => f.Grid switch
+    {
+        FrequencyGrid.SinglePoint => "one point",
+        FrequencyGrid.Uniform     => $"uniform, step {Hz(f.StepHz)}",
+        FrequencyGrid.Logarithmic => $"logarithmic, {f.PointsPerDecade.ToString("0.#", CultureInfo.InvariantCulture)} per decade",
+        _ => f.FrequenciesOutOfOrder
+            ? $"not increasing from point {f.FirstNonIncreasingIndex + 1}"
+            : $"irregular, {Hz(f.SmallestStepHz)} to {Hz(f.LargestStepHz)}",
+    };
+
+    /// <summary>A frequency with an SI prefix.</summary>
+    public static string Hz(double hz) =>
+        !double.IsFinite(hz) ? "?"
+        : Math.Abs(hz) >= 1e9 ? $"{(hz / 1e9).ToString("0.######", CultureInfo.InvariantCulture)} GHz"
+        : Math.Abs(hz) >= 1e6 ? $"{(hz / 1e6).ToString("0.######", CultureInfo.InvariantCulture)} MHz"
+        : Math.Abs(hz) >= 1e3 ? $"{(hz / 1e3).ToString("0.######", CultureInfo.InvariantCulture)} kHz"
+        : $"{hz.ToString("0.######", CultureInfo.InvariantCulture)} Hz";
+
+    private static string FormatName(MatrixFormat m) => m switch
+    {
+        MatrixFormat.RI => "real, imaginary",
+        MatrixFormat.DB => "dB, angle",
+        _               => "magnitude, angle",
+    };
+
+    private static string Reference(TouchstoneFacts f)
+        => f.Z0PerPort is { } perPort && perPort.Distinct().Count() > 1
+            ? string.Join(", ", perPort.Select((z, i) => $"{i + 1}: {Ohms(z)}"))
+            : Ohms(f.Z0);
+
+    private static string Ohms(System.Numerics.Complex z) =>
+        Math.Abs(z.Imaginary) < 1e-12
+            ? $"{z.Real.ToString("0.###", CultureInfo.InvariantCulture)} Ω"
+            : $"{z.Real.ToString("0.###", CultureInfo.InvariantCulture)}{z.Imaginary.ToString("+0.###;-0.###", CultureInfo.InvariantCulture)}j Ω";
+
     // ── the plots ─────────────────────────────────────────────────────────────
 
     /// <summary>

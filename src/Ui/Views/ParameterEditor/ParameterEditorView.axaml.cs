@@ -122,6 +122,7 @@ public partial class ParameterEditorView : UserControl
             _boundVm.WBondLayoutUpdated -= OnWBondLayoutUpdated;
             _boundVm.OpenMatchDesignerRequested -= OnOpenMatchDesigner;
             _boundVm.OpenSignalDesignerRequested -= OnOpenSignalDesigner;
+            _boundVm.OpenSnpViewerRequested -= OnOpenSnpViewer;
         }
         _boundVm = DataContext as ParameterEditorViewModel;
         if (_boundVm is not null)
@@ -130,6 +131,7 @@ public partial class ParameterEditorView : UserControl
             _boundVm.WBondLayoutUpdated += OnWBondLayoutUpdated;
             _boundVm.OpenMatchDesignerRequested += OnOpenMatchDesigner;
             _boundVm.OpenSignalDesignerRequested += OnOpenSignalDesigner;
+            _boundVm.OpenSnpViewerRequested += OnOpenSnpViewer;
         }
 
         if (DataContext is ParameterEditorViewModel vm)
@@ -164,6 +166,10 @@ public partial class ParameterEditorView : UserControl
         if (Vm?.SchematicVm is not { } schematicVm) return;
         Views.Signals.SignalDesignerWindow.Show(schematicVm, comp, TopLevel.GetTopLevel(this) as Window);
     }
+
+    /// <summary>Opens the S-Parameter Viewer on the selected SnP component's Touchstone file.</summary>
+    private void OnOpenSnpViewer(string path)
+        => Views.SParameters.SParameterViewerWindow.ShowForFile(path, TopLevel.GetTopLevel(this) as Window);
 
     private async Task OpenCvEditorDialogAsync()
     {

@@ -10237,6 +10237,32 @@ public partial class WorkspaceViewModel : ViewModelBase, ITreeActions, IHierarch
     private void NewSignalDesigner() => Views.Signals.SignalDesignerWindow.ShowStandalone(ResolveOwner(null));
 
     /// <summary>
+    /// Tools ▸ S-Parameter Viewer: a viewer waiting for a Touchstone file. Needs no workspace; opens unowned and
+    /// cascaded as the standalone Signal Designer does.
+    /// </summary>
+    [RelayCommand]
+    private void NewSParameterViewer() => Views.SParameters.SParameterViewerWindow.ShowStandalone(ResolveOwner(null));
+
+    /// <summary>The S-Parameter Viewer on one Touchstone file — the window already showing it, or a new one.</summary>
+    public void OpenInSParameterViewer(string path)
+    {
+        if (!File.Exists(path))
+        {
+            Messages.Error($"'{path}' is no longer there.");
+            return;
+        }
+        Views.SParameters.SParameterViewerWindow.ShowForFile(path, ResolveOwner(null));
+    }
+
+    /// <summary>Opens a <c>.cdd</c> as a Data Display tab, as double-clicking it in the Workspace does — the S-Parameter
+    /// Viewer's Save as Data Display lands here.</summary>
+    public void OpenDataDisplayDocument(string path)
+    {
+        _factory.ProjectTreeTool?.Refresh();
+        OpenOrActivateDataDisplay(path);
+    }
+
+    /// <summary>
     /// Opens a blank wBond editor — wbond.md §10's third entry point.
     ///
     /// <para><b>No workspace and no layout context required</b>, deliberately: that entry point exists
@@ -11550,6 +11576,12 @@ public partial class WorkspaceViewModel : ViewModelBase, ITreeActions, IHierarch
         // bookmarked path is normally outside the workspace and foreignness is decided by the file's
         // own path (brief-foreign-documents.md §1.1), not by the surface it was opened from.
         var kind = node.Kind;
+        // A Touchstone file has no editor; double-clicking one opens it in the S-Parameter Viewer.
+        if (node.IsTouchstoneFile)
+        {
+            OpenInSParameterViewer(node.AbsolutePath);
+            return;
+        }
         // brief-em3d-28 R-em3d28-5 — a Palace or openEMS run directory opens the 3D view of the
         // setup that made it, with its mesh.
         if ((kind == NodeKind.UserFolder || (kind == NodeKind.KnownFile && node.IsDirectory))

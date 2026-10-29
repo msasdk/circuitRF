@@ -28,6 +28,12 @@ public partial class DatasetsListView : UserControl
             vm.LocateFileRequested = LocateFileAsync;
     }
 
+    private void OnViewClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: DatasetRowViewModel { Entry.FilePath: { } path } })
+            SParameters.SParameterViewerWindow.ShowForFile(path, TopLevel.GetTopLevel(this) as Window);
+    }
+
     private void OnAliasLostFocus(object? sender, RoutedEventArgs e)
     {
         if (sender is TextBox { DataContext: DatasetRowViewModel row }) row.CommitAlias();

@@ -5,6 +5,7 @@
         xmlns:v3="using:CircuitRF.Ui.Viewer3D"
         xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
         xmlns:ctl="using:CircuitRF.Ui.DataDisplay.Controls"
+        xmlns:uictl="using:CircuitRF.Ui.Controls"
         xmlns:dock="clr-namespace:Dock.Avalonia.Controls;assembly=Dock.Avalonia"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -549,6 +550,8 @@
                              in-window Tools menu below; the two surfaces are hand-maintained and must
                              not drift. -->
                         <NativeMenuItem Header="Smith Chart" Command="{Binding NewSmithChartCommand}"/>
+                        <!-- The S-Parameter Viewer: one Touchstone file at a glance, in a window of its own. Mirrored below. -->
+                        <NativeMenuItem Header="S-Parameter Viewer" Command="{Binding NewSParameterViewerCommand}"/>
                         <!-- brief-modelcomposer-14 R-mc14-1 — a window per .cmc; needs no workspace. Mirrored below. -->
                         <NativeMenuItem Header="Model Composer…" Command="{Binding NewModelComposerCommand}"/>
                         <!-- brief-img-14 R-im14-13: the picture dialog, empty, in plot mode. Mirrored below. -->
@@ -1626,6 +1629,15 @@
                     <MenuItem.Icon>
                         <ctl:PlotTypeGlyphControl Kind="Smith" Width="16" Height="16"
                             Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <!-- S-Parameter Viewer — hand-mirrored with the macOS NativeMenu above. -->
+                <MenuItem Header="S-_Parameter Viewer"
+                          Command="{Binding NewSParameterViewerCommand}"
+                          ToolTip.Tip="Check a Touchstone file at a glance: what it states, its reflections on a Smith chart, and every term in dB and phase over the file's own frequency range. Opens with or without a workspace.">
+                    <!-- The SnP part's own library glyph, the component the viewer also opens from. -->
+                    <MenuItem.Icon>
+                        <uictl:PaletteGlyphControl Kind="Snp" PortCount="2" Monochrome="True" Width="16" Height="16"/>
                     </MenuItem.Icon>
                 </MenuItem>
                 <!-- brief-modelcomposer-14 R-mc14-1 — hand-mirrored with the macOS NativeMenu above. -->

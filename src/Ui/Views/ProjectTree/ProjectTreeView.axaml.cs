@@ -267,7 +267,8 @@ public partial class ProjectTreeView : UserControl
             // after the fact and was not enough on its own — the report came back the next day.
             // Showing the window once the gesture is over removes the thing it was reacting to.
             // Docked documents keep opening on the press; they live inside this window.
-            if (vm.Kind == NodeKind.RailFile)
+            // A Touchstone file opens the S-Parameter Viewer, which is a window of its own too.
+            if (vm.Kind == NodeKind.RailFile || vm.IsTouchstoneFile)
             {
                 _activateOnRelease = vm;
                 return;

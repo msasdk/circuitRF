@@ -38,6 +38,10 @@ public sealed partial class DatasetRowViewModel : ObservableObject
     public string FileName => _entry.FileName ?? "(unknown)";
     public bool   IsBroken => _entry.IsBroken;
 
+    /// <summary>A Touchstone file that is there — what the row's View button opens in the S-Parameter Viewer.</summary>
+    public bool IsTouchstone => !IsBroken && _entry.Snp is not null
+                                && _entry.FilePath is { } p && RfCore.TouchstoneIO.ParsePortsFromExtension(p) is > 0;
+
     /// <summary>
     /// Supplies the workspace root so a source outside it can be marked external (R-stb-12).
     /// Null (no workspace open) means nothing is classified as external.

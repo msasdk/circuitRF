@@ -365,6 +365,8 @@ public partial class WorkspaceViewModel : IImageDialogHost
     [RelayCommand(CanExecute = nameof(IsWorkspaceOpenForImage))]
     private void DigitisePlot(Window? owner) => ShowPlotDialog(null, csv: true, owner, classify: true);
 
+    public void OpenInSParameterViewer(ProjectTreeNodeViewModel node) => OpenInSParameterViewer(node.AbsolutePath);
+
     public void CreateTouchstoneFromImageFile(ProjectTreeNodeViewModel node)
     {
         var read = ImageSource.FromFile(node.AbsolutePath);

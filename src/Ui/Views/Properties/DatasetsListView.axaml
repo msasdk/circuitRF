@@ -33,7 +33,7 @@
             <ItemsControl ItemsSource="{Binding Rows}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:DatasetRowViewModel">
-                        <Grid ColumnDefinitions="*,Auto,Auto"
+                        <Grid ColumnDefinitions="*,Auto,Auto,Auto"
                               Margin="0,2"
                               ToolTip.Tip="{Binding RenameError}">
                             <TextBox Grid.Column="0"
@@ -62,6 +62,16 @@
                                     Content="{Binding LocateButtonText}"
                                     FontSize="10"
                                     Padding="6,2"/>
+                            <!-- A Touchstone source opens in the S-Parameter Viewer. -->
+                            <Button Grid.Column="3"
+                                    Classes="seg-btn"
+                                    Click="OnViewClick"
+                                    IsVisible="{Binding IsTouchstone}"
+                                    Content="View"
+                                    FontSize="10"
+                                    Padding="6,2"
+                                    Margin="4,0,0,0"
+                                    ToolTip.Tip="Open this file in the S-Parameter Viewer: what it states, its reflections on a Smith chart, and every term in dB and phase"/>
                         </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

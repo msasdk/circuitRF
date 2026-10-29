@@ -1090,7 +1090,7 @@
                             Margin="6,4"
                             Spacing="8">
                     <!-- File -->
-                    <Grid ColumnDefinitions="60,*,Auto,Auto">
+                    <Grid ColumnDefinitions="60,*,Auto,Auto,Auto">
                         <TextBlock Grid.Column="0" Text="File"
                                    FontSize="11" VerticalAlignment="Center"/>
                         <TextBox Grid.Column="1"
@@ -1231,6 +1231,15 @@
                                 Margin="4,0,0,0"
                                 ToolTip.Tip="Reveal this file in the system file manager"
                                 Command="{Binding ShowSnpFileCommand}"/>
+                        <!-- Enabled once a file is chosen that is there: the S-Parameter Viewer opens on it. -->
+                        <Button Grid.Column="4"
+                                Content="View"
+                                FontSize="11"
+                                Padding="6,3"
+                                Margin="4,0,0,0"
+                                ToolTip.Tip="Open this file in the S-Parameter Viewer: what it states, its reflections on a Smith chart, and every term in dB and phase"
+                                ToolTip.ShowOnDisabled="True"
+                                Command="{Binding ViewSnpFileCommand}"/>
                     </Grid>
                     <!-- RefNode toggle -->
                     <CheckBox IsChecked="{Binding SnpRefNode}"

@@ -367,6 +367,17 @@ public sealed class ProjectTreeNodeViewModel : ObservableObject
         && CircuitRF.Ui.Recognition.PasteImageAvailability.IsPictureFile(AbsolutePath);
 
     /// <summary>
+    /// True for a Touchstone file (<c>.s1p</c> … <c>.sNp</c>) — a Known File, or a file inside the workspace folder —
+    /// which drives <i>Open in S-Parameter Viewer</i> and opens the viewer on a double-click. Extension only, as
+    /// <see cref="IsImageFile"/> is, so building the menu never reads a file; a broken Known File gets no row.
+    /// </summary>
+    public bool IsTouchstoneFile =>
+        !IsDirectory
+        && !IsWarning
+        && (Kind == NodeKind.KnownFile || (Kind == NodeKind.OtherFile && IsInsideWorkspace))
+        && RfCore.TouchstoneIO.ParsePortsFromExtension(AbsolutePath) is > 0;
+
+    /// <summary>
     /// True for a Known File that is a SPICE <c>.model</c> card file — drives "Copy to Workspace as
     /// Cell…" for model cards.
     ///
@@ -597,6 +608,8 @@ public sealed class ProjectTreeNodeViewModel : ObservableObject
     public IRelayCommand CreateSchematicFromImageCommand { get; }
     public IRelayCommand CreateLayoutFromImageCommand { get; }
     public IRelayCommand CreateTouchstoneFromPlotCommand { get; }
+    /// <summary>Opens this Touchstone file in the S-Parameter Viewer.</summary>
+    public IRelayCommand OpenInSParameterViewerCommand { get; }
     /// <summary>Builds a cell from a SPICE <c>.model</c> card in this file (Known File nodes only).</summary>
     public IAsyncRelayCommand CreateCellFromModelCardCommand { get; }
 
@@ -923,6 +936,10 @@ public sealed class ProjectTreeNodeViewModel : ObservableObject
         CreateTouchstoneFromPlotCommand = new RelayCommand(
             () => _actions?.CreateTouchstoneFromImageFile(this),
             () => _actions is not null && IsImageFile);
+
+        OpenInSParameterViewerCommand = new RelayCommand(
+            () => _actions?.OpenInSParameterViewer(this),
+            () => _actions is not null && IsTouchstoneFile);
 
         CreateCellFromModelCardCommand = new AsyncRelayCommand(
             () => _actions?.CreateCellFromModelCardAsync(this) ?? Task.CompletedTask,

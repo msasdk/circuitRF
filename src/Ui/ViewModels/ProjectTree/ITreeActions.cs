@@ -84,6 +84,9 @@ public interface ITreeActions
     /// plot, Make Touchstone.</summary>
     void CreateTouchstoneFromImageFile(ProjectTreeNodeViewModel node) { }
 
+    /// <summary>Open in S-Parameter Viewer on a Touchstone file: its plots and what it states, in the viewer's window.</summary>
+    void OpenInSParameterViewer(ProjectTreeNodeViewModel node) { }
+
     /// <summary>
     /// Build a NEW cell around one SPICE <c>.model</c> card in this file — the native circuitRF
     /// component carrying the card's parameters, its pins already wired, and an editable copy of

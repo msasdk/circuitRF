@@ -78,23 +78,33 @@ public static class PlotConfigLoader
             if (LoadTrace(traceConfig, pc.PlotType, pc.FreqUnit, sources) is { } trace)
                 plot.Traces.Add(trace);
 
-        if (pc.Axes is { } savedAxes)
-        {
-            // BEFORE the windows, and it has to be: Axes.Window repairs its value differently in
-            // each mode (the linear zero-nudge is the log map's undefined point), so a log document
-            // whose mode arrived second would have had its left edge nudged to −1e-6 on the way in.
-            if (plot.PlotType.IsRect()) plot.Axes.XScale = savedAxes.XScale;
-            plot.RestoreAxesFromConfig(
-                savedAxes.AutoscaleX, savedAxes.AutoscaleY,
-                savedAxes.AutoscaleRightY, savedAxes.AutoscaleMag,
-                new PlotRect(savedAxes.WindowX, savedAxes.WindowY,
-                         savedAxes.WindowWidth, savedAxes.WindowHeight),
-                new PlotRect(savedAxes.WindowSecondaryX, savedAxes.WindowSecondaryY,
-                         savedAxes.WindowSecondaryWidth, savedAxes.WindowSecondaryHeight));
-        }
-        else
-            plot.Autoscale();  // no axes config — old file, default to full autoscale
+        RestoreAxes(plot, pc.Axes);
         return plot;
+    }
+
+    /// <summary>
+    /// Puts a saved axes configuration onto <paramref name="plot"/>, whose traces are already in it —
+    /// or autoscales when there is none (an old file). Public for a plot that is REFILLED rather than
+    /// loaded, as the S-Parameter Viewer's are, so restoring a window is said in one place.
+    /// </summary>
+    public static void RestoreAxes(Plot plot, AxesConfig? savedAxes)
+    {
+        if (savedAxes is null)
+        {
+            plot.Autoscale();
+            return;
+        }
+        // BEFORE the windows, and it has to be: Axes.Window repairs its value differently in
+        // each mode (the linear zero-nudge is the log map's undefined point), so a log document
+        // whose mode arrived second would have had its left edge nudged to −1e-6 on the way in.
+        if (plot.PlotType.IsRect()) plot.Axes.XScale = savedAxes.XScale;
+        plot.RestoreAxesFromConfig(
+            savedAxes.AutoscaleX, savedAxes.AutoscaleY,
+            savedAxes.AutoscaleRightY, savedAxes.AutoscaleMag,
+            new PlotRect(savedAxes.WindowX, savedAxes.WindowY,
+                     savedAxes.WindowWidth, savedAxes.WindowHeight),
+            new PlotRect(savedAxes.WindowSecondaryX, savedAxes.WindowSecondaryY,
+                     savedAxes.WindowSecondaryWidth, savedAxes.WindowSecondaryHeight));
     }
 
 

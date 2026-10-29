@@ -209,34 +209,14 @@ internal static class Snp
 
     // ── the report ───────────────────────────────────────────────────────────
 
+    /// <summary>The viewer's file pane, line for line — <see cref="SParameterViewerPreset.FileFacts"/>'s wording.</summary>
     private static void Report(TouchstoneSource source, IReadOnlyList<SParameterViewerPreset.Term> selection)
     {
-        var f = source.Facts;
-        Console.WriteLine($"{System.IO.Path.GetFileName(source.Path)} — {f.Ports}-port {f.Type}-parameters, "
-                        + $"{f.Format}, {f.FrequencyUnit}");
-        Console.WriteLine($"  points        {f.FrequencyCount}");
-        Console.WriteLine($"  frequency     {Check.Hz(f.FirstFrequencyHz)} to {Check.Hz(f.LastFrequencyHz)}");
-        Console.WriteLine($"  grid          {Grid(f)}");
-        Console.WriteLine($"  reference     {Reference(f)}");
-        Console.WriteLine($"  noise data    {(f.NoisePoints > 0 ? $"{f.NoisePoints} point(s)" : "none")}");
-        Console.WriteLine($"  plotted       {string.Join(", ", selection.Select(t => SParameterViewerPreset.Name(t, f.Ports)))}");
+        Console.WriteLine(System.IO.Path.GetFileName(source.Path));
+        foreach (var (label, value) in SParameterViewerPreset.FileFacts(source.Facts))
+            Console.WriteLine($"  {label,-12}  {value}");
+        Console.WriteLine($"  {"Plotted",-12}  {string.Join(", ", selection.Select(t => SParameterViewerPreset.Name(t, source.Facts.Ports)))}");
     }
-
-    /// <summary>The grid as the window's file pane states it.</summary>
-    internal static string Grid(TouchstoneFacts f) => f.Grid switch
-    {
-        FrequencyGrid.SinglePoint => "one point",
-        FrequencyGrid.Uniform     => $"uniform, step {Check.Hz(f.StepHz)}",
-        FrequencyGrid.Logarithmic => $"logarithmic, {f.PointsPerDecade.ToString("0.#", CultureInfo.InvariantCulture)} points per decade",
-        _ => f.FrequenciesOutOfOrder
-            ? $"not increasing from point {f.FirstNonIncreasingIndex + 1}"
-            : $"irregular, steps {Check.Hz(f.SmallestStepHz)} to {Check.Hz(f.LargestStepHz)}",
-    };
-
-    private static string Reference(TouchstoneFacts f)
-        => f.Z0PerPort is { } perPort && perPort.Distinct().Count() > 1
-            ? string.Join(", ", perPort.Select((z, i) => $"port {i + 1} {Check.Ohms(z)}"))
-            : Check.Ohms(f.Z0);
 
     private static SnpReportJson SnpJson(TouchstoneSource source, IReadOnlyList<SParameterViewerPreset.Term> selection)
     {

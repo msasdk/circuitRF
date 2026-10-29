@@ -530,6 +530,15 @@
                                         </MenuItem>
                                         <Separator IsVisible="False" Tag="{Binding IsRailFile}"/>
 
+                                        <!-- A Touchstone file, bookmarked or inside the workspace folder, by extension only — the
+                                             double-click does the same. -->
+                                        <MenuItem Header="Open in S-Parameter Viewer"
+                                                  Command="{Binding OpenInSParameterViewerCommand}"
+                                                  IsVisible="{Binding IsTouchstoneFile}"
+                                                  ToolTip.Tip="Check this file at a glance: what it states, its reflections on a Smith chart, and every term in dB and phase over its own frequency range.">
+                                            <MenuItem.Icon><mi:MaterialIcon Kind="ChartLine" Width="14" Height="14"/></MenuItem.Icon>
+                                        </MenuItem>
+
                                         <!-- Known File actions -->
                                         <MenuItem Header="Open External…"
                                                   Command="{Binding OpenExternalCommand}"

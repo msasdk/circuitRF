@@ -70,6 +70,7 @@ public sealed partial class ParameterEditorViewModel : ObservableObject
         PickSnpFileCommand    = new AsyncRelayCommand(PickFileAsync);
         ShowSnpFileCommand    = new AsyncRelayCommand(RevealSnpFileAsync,
             () => !string.IsNullOrWhiteSpace(SnpFilePath));
+        ViewSnpFileCommand    = new RelayCommand(ViewSnpFile, () => ResolvedSnpFile() is not null);
         OpenCvEditorCommand   = new AsyncRelayCommand(OpenCvEditorAsync);
         PickSpiceModelFileCommand = new AsyncRelayCommand(PickSpiceModelFileAsync);
         ShowSpiceModelFileCommand = new AsyncRelayCommand(RevealSpiceModelFileAsync,
@@ -592,6 +593,13 @@ public sealed partial class ParameterEditorViewModel : ObservableObject
     public IAsyncRelayCommand PickSnpFileCommand    { get; private set; } = null!;
     public IAsyncRelayCommand ShowSnpFileCommand    { get; private set; } = null!;
 
+    /// <summary>Opens the chosen Touchstone file in the S-Parameter Viewer. Enabled once a file is chosen that is there.</summary>
+    public IRelayCommand ViewSnpFileCommand { get; private set; } = null!;
+
+    /// <summary>Raised by <see cref="ViewSnpFileCommand"/> with the file's absolute path; the view opens the window,
+    /// since only it knows the owner.</summary>
+    public event Action<string>? OpenSnpViewerRequested;
+
     [ObservableProperty] private string _snpFilePath         = "";
     [ObservableProperty] private bool   _snpRefNode          = false;
     [ObservableProperty] private int    _snpPinConfigIndex   = 0;
@@ -600,7 +608,24 @@ public sealed partial class ParameterEditorViewModel : ObservableObject
     [ObservableProperty] private int    _snpInterpDomainIndex = 1; // MA
     [ObservableProperty] private string _snpPortCountText    = "";
 
-    partial void OnSnpFilePathChanged(string value) => ShowSnpFileCommand.NotifyCanExecuteChanged();
+    partial void OnSnpFilePathChanged(string value)
+    {
+        ShowSnpFileCommand.NotifyCanExecuteChanged();
+        ViewSnpFileCommand.NotifyCanExecuteChanged();
+    }
+
+    /// <summary>The File parameter as the engine will open it — the one resolver Show uses — or null when none is
+    /// chosen or it is not there.</summary>
+    private string? ResolvedSnpFile()
+        => !string.IsNullOrWhiteSpace(SnpFilePath)
+           && SnpPathPolicy.Resolve(SnpFilePath, _schematicVm?.WorkspaceRoot, _schematicVm?.EditModel.SchematicDirectory) is { } path
+           && System.IO.File.Exists(path)
+            ? path : null;
+
+    private void ViewSnpFile()
+    {
+        if (ResolvedSnpFile() is { } path) OpenSnpViewerRequested?.Invoke(path);
+    }
 
     partial void OnSnpRefNodeChanged(bool oldValue, bool newValue)
     {
