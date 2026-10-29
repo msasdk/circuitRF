@@ -143,7 +143,7 @@
                                                 <Grid ColumnDefinitions="Auto,*" Margin="0,1">
                                                     <TextBlock Classes="lbl" Text="{Binding Label}" Margin="0,0,10,0"/>
                                                     <SelectableTextBlock Grid.Column="1" FontSize="12" TextAlignment="Right" TextWrapping="Wrap"
-                                                                         VerticalAlignment="Center" Text="{Binding Value}"/>
+                                                                         HorizontalAlignment="Right" VerticalAlignment="Center" Text="{Binding Value}"/>
                                                 </Grid>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
@@ -226,7 +226,7 @@
                         </Button>
                     </StackPanel>
 
-                    <Grid IsVisible="{Binding HasFile}" ColumnDefinitions="*,*" RowDefinitions="*,*">
+                    <Grid IsVisible="{Binding HasFile}" ColumnDefinitions="*,1.3*" RowDefinitions="*,*">
                         <ctl:AspectRatioPanel Grid.RowSpan="2" Ratio="1" VerticalAlignment="Center" Margin="0,2,6,2">
                             <ddc:PlotControl Name="SmithPlotControl" Plot="{Binding SmithPlot}" Library="{Binding PlotHost.Library}"
                                              CanDeletePlot="False" CanEditPlotProperties="False"/>

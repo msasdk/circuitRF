@@ -43,6 +43,10 @@ public static class SParameterViewerPreset
     // ratio — so the text, which is laid out in absolute sizes, reads the same here as there.
     private const double Gap = 24, SmithSize = 420, RectWidth = 520, RectHeight = 321;
 
+    /// <summary>Above this many terms a rectangular plot draws no legend: sixteen entries cover the curves they
+    /// name, and the viewer's tick boxes carry each term's colour anyway.</summary>
+    public const int LegendUpToTerms = 6;
+
     /// <summary>The three plots, in the order they are laid out.</summary>
     public enum PlotKind { Smith, Magnitude, Phase }
 
@@ -314,7 +318,7 @@ public static class SParameterViewerPreset
         Left = left, Top = top, Width = RectWidth, Height = RectHeight,
         CustomTitle = title, CustomTitleOn = true,
         CustomYLabel = yLabel, CustomYLabelOn = true,
-        Legend = LegendPlacement.Inside,
+        Legend = traces.Count <= LegendUpToTerms ? LegendPlacement.Inside : LegendPlacement.Off,
         Traces = traces,
         Axes = axes,
     };
