@@ -250,9 +250,20 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
         PlaceLegends();
     }
 
+    /// <summary>The line-width unit every plot is drawn with, whatever size its host is. The renderer's own
+    /// unit is min(width, height)/200, so a plot that fills the pane would stroke twice as heavily as one
+    /// sharing the pane.</summary>
+    private const double StrokeUnit = 1.8;
+    private const double BaseTickFont = 6;
+    private const double BaseLabelFont = 8;
+    private const double BaseGrid = 0.5;
+    private const double BaseTick = 0.5;
+    private const double BaseLine = 1;
+    private const double LegendGap = 6;
+
     /// <summary>
     /// The trace names sit just beside the graph: the disc on a Smith chart, the plot box on a rectangular
-    /// one. A column at the pane's edge left them a chart-width away from a centred disc.
+    /// one. The rectangular box is centred, so the list on its right does not shove the graph to the left.
     /// </summary>
     private void PlaceLegends()
     {
@@ -261,24 +272,37 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
         PlaceLegend(this.FindControl<PlotControl>("PhasePlotControl"), this.FindControl<ItemsControl>("PhaseLegendList"));
     }
 
-    private const double LegendGap = 6;
-
     private static void PlaceLegend(PlotControl? plot, ItemsControl? legend)
     {
         if (plot?.Plot is not { } model || legend is null) return;
         if (plot.Bounds.Width < 2 || plot.Bounds.Height < 2) return;
+        HoldStroke(plot);
+
         double lw = legend.Bounds.Width, lh = legend.Bounds.Height;
         if (lw < 1 || lh < 1) return;
 
-        // A rectangular plot gives the list its own strip, so the axis ends at the names instead of
-        // a margin's width before them. The Smith disc stays centred; the list moves to its edge.
         if (model.PlotType == PlotType.Rect)
         {
-            var v = model.Axes.Viewport;
-            double width = Math.Max(0.45, 1 - (lw + LegendGap + 2) / plot.Bounds.Width - v.X);
-            if (Math.Abs(v.Width - width) > 0.008)
+            // The list needs a strip on the right. Match it with the same strip on the left when the
+            // labels fit, so the box — not the list — sits on the pane's centre line.
+            double right = Math.Clamp((lw + LegendGap + 4) / plot.Bounds.Width, 0.06, 0.38);
+            const double labelMin = 0.12;
+            double left, box;
+            if (right <= 0.5 - labelMin)
             {
-                model.Axes.Viewport = new PlotRect(v.X, v.Y, width, v.Height);
+                double margin = Math.Max(right, labelMin);
+                left = margin;
+                box = 1 - 2 * margin;
+            }
+            else
+            {
+                left = labelMin;
+                box = Math.Max(0.4, 1 - labelMin - right);
+            }
+            var v = model.Axes.Viewport;
+            if (Math.Abs(v.X - left) > 0.008 || Math.Abs(v.Width - box) > 0.008)
+            {
+                model.Axes.Viewport = new PlotRect(left, v.Y, box, v.Height);
                 plot.InvalidateVisual();
             }
         }
@@ -292,6 +316,28 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
             Canvas.SetTop(legend, y);
     }
 
+    /// <summary>Scales the plot's own weights so the rendered stroke is <see cref="StrokeUnit"/>, not a
+    /// function of how large the host happens to be this arrangement.</summary>
+    private static void HoldStroke(PlotControl plot)
+    {
+        if (plot.Plot is not { } model) return;
+        double natural = Math.Min(plot.Bounds.Width, plot.Bounds.Height) / 200.0;
+        if (natural < 0.25) return;
+        double k = StrokeUnit / natural;
+        var ax = model.Axes;
+        bool axesHeld = Math.Abs(ax.FontSizeTicks - BaseTickFont * k) < 0.04;
+        bool linesHeld = model.Traces.Count == 0
+                      || Math.Abs(model.Traces[0].Properties.LineWidth - BaseLine * k) < 0.04;
+        if (axesHeld && linesHeld) return;
+        ax.FontSizeTicks = BaseTickFont * k;
+        ax.FontSizeLabel = BaseLabelFont * k;
+        ax.GridThicknessFactor = BaseGrid * k;
+        ax.TickThicknessFactor = BaseTick * k;
+        foreach (var t in model.Traces)
+            t.Properties.LineWidth = BaseLine * k;
+        plot.InvalidateVisual();
+    }
+
     private void OnWindowPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (Vm is null || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
@@ -301,19 +347,11 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
         Vm.PlotHost.SelectOnly((MarkerInfoBoxViewModel?)null);
     }
 
-    /// <summary>A hidden plot's row takes nothing, so whichever are on fill the pane and keep their order:
-    /// Smith, then magnitude, then phase. A star row stays a star while its child is merely hidden, which
-    /// is why the height is set here and not left to <c>IsVisible</c>.</summary>
+    /// <summary>A plot that collapses under the pointer never gets PointerExited, so the hover box would
+    /// stay up over whatever was turned on in its place. The layout itself follows the three flags.</summary>
     private void ApplyPlotRows()
     {
-        if (Vm is null || this.FindControl<Grid>("PlotGrid") is not { } grid || grid.RowDefinitions.Count < 3) return;
-        static GridLength Row(bool on) => on ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
-        grid.RowDefinitions[0].Height = Row(Vm.ShowSmith);
-        grid.RowDefinitions[1].Height = Row(Vm.ShowMagnitude);
-        grid.RowDefinitions[2].Height = Row(Vm.ShowPhase);
-        grid.InvalidateMeasure();
-        // A plot that collapses under the pointer never gets PointerExited, so the hover box would
-        // stay up over an empty pane.
+        this.FindControl<SParameterPlotLayout>("PlotGrid")?.InvalidateMeasure();
         HideReadout();
         foreach (var (plot, _, mark) in _hosted)
             if (mark.Move(null, default)) plot.InvalidateVisual();

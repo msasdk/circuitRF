@@ -75,8 +75,12 @@ every plot and the terms on show take the palette's first colours. Past six term
 draws no legend: sixteen entries cover the curves they name, and the tick boxes carry the colours.
 
 The window opens on the Smith chart and magnitude. Every toolbar button can be off, and then the
-pane is empty. It draws no title above a plot and lists the trace names beside it, up to the same
-six; the saved `.cdd` and `circuitrf snp` keep the preset's titles and in-plot legend. A Smith chart
+pane is empty. One plot is centred. The Smith chart with one rectangular plot stacks the two with a
+gap. All three put the Smith chart across the top and magnitude and phase side by side beneath it.
+Strokes, grid lines and axis figures are held at one weight, so a plot that fills the pane is not
+drawn with a heavier pen than one sharing it. The window draws no title above a plot and lists the
+trace names beside it, up to the same six; the saved `.cdd` and `circuitrf snp` keep the preset's
+titles and in-plot legend. A Smith chart
 in a Data Display is given a canvas taller than the disc, for the title and the rows under it. The
 window's row cannot grow, so the hosted chart drops both — a disc pushed down to make room for a
 title paints past the row, over the window and over the plots below.

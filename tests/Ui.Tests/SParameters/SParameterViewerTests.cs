@@ -17,6 +17,7 @@ using CircuitRF.Render.DataDisplay;
 using CircuitRF.Ui.Schematic;
 using CircuitRF.Ui.SParameters;
 using CircuitRF.Ui.ViewModels.ProjectTree;
+using CircuitRF.Ui.Views.SParameters;
 using NumFlat;
 using RfCore;
 using RfCore.Data;
@@ -207,6 +208,30 @@ public sealed class SParameterViewerTests : IDisposable
     }
 
     // ── the window's view model ──────────────────────────────────────────────
+
+    [Fact]
+    public void ThePlotsAreCentred_StackedWithAGap_AndSplitWhenAllThreeAreOn()
+    {
+        var one = SParameterPlotLayout.SlotsFor(smith: false, magnitude: true, phase: false, 800, 500);
+        Assert.Equal(0, one.Smith.Width);
+        Assert.InRange((one.Magnitude.Left + one.Magnitude.Right) / 2, 399, 401);
+        Assert.True(one.Magnitude.Top > 1);
+        Assert.True(one.Magnitude.Bottom < 499);
+
+        var two = SParameterPlotLayout.SlotsFor(smith: true, magnitude: true, phase: false, 800, 500);
+        Assert.True(two.Magnitude.Top >= two.Smith.Bottom + SParameterPlotLayout.Gap - 0.1);
+        Assert.Equal(800, two.Smith.Width);
+        Assert.Equal(800, two.Magnitude.Width);
+        Assert.Equal(0, two.Phase.Width);
+
+        var three = SParameterPlotLayout.SlotsFor(smith: true, magnitude: true, phase: true, 800, 500);
+        Assert.Equal(0, three.Smith.Top);
+        Assert.Equal(800, three.Smith.Width);
+        Assert.True(three.Magnitude.Top >= three.Smith.Bottom + SParameterPlotLayout.Gap - 0.1);
+        Assert.True(three.Phase.Left >= three.Magnitude.Right + SParameterPlotLayout.Gap - 0.1);
+        Assert.Equal(three.Magnitude.Top, three.Phase.Top);
+        Assert.Equal(three.Magnitude.Width, three.Phase.Width);
+    }
 
     [Fact]
     public void TheWindowOpensOnSmithAndMagnitude_AndEveryPlotCanBeOff()
