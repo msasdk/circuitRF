@@ -228,9 +228,9 @@ public sealed class SParameterViewerTests : IDisposable
         Assert.Equal(0, pair.Smith.Width);
         Assert.Equal(800, pair.Magnitude.Width);
         Assert.Equal(800, pair.Phase.Width);
-        Assert.True(pair.Magnitude.Top >= 64);
+        Assert.Equal(16, pair.Magnitude.Top);
         Assert.InRange(pair.Phase.Bottom, 499, 501);
-        Assert.InRange(pair.Phase.Top - pair.Magnitude.Bottom, 0, 8);
+        Assert.Equal(8, pair.Phase.Top - pair.Magnitude.Bottom);
 
         var smithOnly = SParameterPlotLayout.SlotsFor(smith: true, magnitude: false, phase: false, 800, 740);
         Assert.Equal(800, smithOnly.Smith.Width);

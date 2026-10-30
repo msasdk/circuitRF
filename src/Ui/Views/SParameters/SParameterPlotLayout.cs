@@ -84,14 +84,17 @@ public sealed class SParameterPlotLayout : Panel
 
         if (magnitude && phase)
         {
-            // Magnitude above phase, each across the pane. The upper plot starts well below the
-            // toolbar buttons, and only a hair of space separates the two — the axis label already
-            // opens a gap.
-            const double between = 4;
-            double top = Math.Clamp(h * 0.16, 64, 128);
-            double inner = Math.Max(0, h - top - between);
+            // Magnitude above phase, each across the pane. A short gap under the toolbar keeps the
+            // upper axis off the buttons; the two plots themselves sit close, the axis label already
+            // separating them.
+            const double belowButtons = 16;
+            const double between = 8;
+            double inner = Math.Max(0, h - belowButtons - between);
             double row = inner / 2;
-            return new Slots(none, new Rect(0, top, w, row), new Rect(0, top + row + between, w, row));
+            return new Slots(
+                none,
+                new Rect(0, belowButtons, w, row),
+                new Rect(0, belowButtons + row + between, w, row));
         }
 
         if (smith)
