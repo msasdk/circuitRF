@@ -1225,11 +1225,11 @@
                                 Margin="4,0,0,0"
                                 Command="{Binding PickSnpFileCommand}"/>
                         <Button Grid.Column="3"
-                                Content="Show"
+                                Content="Preview"
                                 FontSize="11"
                                 Padding="6,3"
                                 Margin="4,0,0,0"
-                                ToolTip.Tip="Open this file in the S-Parameter Viewer"
+                                ToolTip.Tip="Preview this file in the S-Parameter Viewer"
                                 ToolTip.ShowOnDisabled="True"
                                 Command="{Binding ShowSnpFileCommand}"/>
                     </Grid>

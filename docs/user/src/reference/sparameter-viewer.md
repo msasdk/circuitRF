@@ -35,8 +35,8 @@ right-click menu, and double-clicking the file does it too &mdash; for a file yo
 loose `.sNp` sitting in the workspace folder.
 
 A placed [SnP](components.html#snp) component &mdash; the library's **S1P**, **S2P**, **S3P**, **S4P**
-and **SnP** are all this one component &mdash; enables **Show**, beside **Browse&hellip;**, once its
-file is chosen and is there. **Show** opens the viewer on that file.
+and **SnP** are all this one component &mdash; enables **Preview**, beside **Browse&hellip;**, once its
+file is chosen and is there. **Preview** opens the viewer on that file.
 
 A Data Display's dataset list offers the same **View** on any row whose file is a Touchstone file.
 

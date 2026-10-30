@@ -68,7 +68,7 @@ public sealed partial class ParameterEditorViewModel : ObservableObject
         AddGroupCommand       = new RelayCommand(AddGroup);
         RemoveTopGroupCommand = new RelayCommand(RemoveTopGroup, () => _canRemoveTopGroup);
         PickSnpFileCommand    = new AsyncRelayCommand(PickFileAsync);
-        // Show opens the file in the S-Parameter Viewer. Enabled once the chosen file is there.
+        // Preview opens the file in the S-Parameter Viewer. Enabled once the chosen file is there.
         ShowSnpFileCommand    = new RelayCommand(ShowSnpFile, () => ResolvedSnpFile() is not null);
         OpenCvEditorCommand   = new AsyncRelayCommand(OpenCvEditorAsync);
         PickSpiceModelFileCommand = new AsyncRelayCommand(PickSpiceModelFileAsync);
@@ -606,7 +606,7 @@ public sealed partial class ParameterEditorViewModel : ObservableObject
 
     partial void OnSnpFilePathChanged(string value) => ShowSnpFileCommand.NotifyCanExecuteChanged();
 
-    /// <summary>The File parameter as the engine will open it — the one resolver Show uses — or null when none is
+    /// <summary>The File parameter as the engine will open it — the one resolver Preview uses — or null when none is
     /// chosen or it is not there.</summary>
     private string? ResolvedSnpFile()
         => !string.IsNullOrWhiteSpace(SnpFilePath)
@@ -614,7 +614,7 @@ public sealed partial class ParameterEditorViewModel : ObservableObject
            && System.IO.File.Exists(path)
             ? path : null;
 
-    /// <summary>Show: the S-Parameter Viewer on the chosen file.</summary>
+    /// <summary>Preview: the S-Parameter Viewer on the chosen file.</summary>
     private void ShowSnpFile()
     {
         if (ResolvedSnpFile() is { } path) OpenSnpViewerRequested?.Invoke(path);
