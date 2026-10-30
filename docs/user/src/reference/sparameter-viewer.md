@@ -69,7 +69,7 @@ them on the pane is empty.
 |---|---|
 | One | That plot, centred in the pane. |
 | The Smith chart and one rectangular plot | The Smith chart on top and the other below it, with a gap between them. |
-| Magnitude and phase | Side by side. |
+| Magnitude and phase | One above the other, each across the pane. |
 | All three | The Smith chart across the top, magnitude at the bottom left and phase at the bottom right. |
 
 The names of the traces sit beside each plot. Nothing is written above the curves.

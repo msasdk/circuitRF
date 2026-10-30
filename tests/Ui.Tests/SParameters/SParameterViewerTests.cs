@@ -224,6 +224,17 @@ public sealed class SParameterViewerTests : IDisposable
         Assert.Equal(800, two.Magnitude.Width);
         Assert.Equal(0, two.Phase.Width);
 
+        var pair = SParameterPlotLayout.SlotsFor(smith: false, magnitude: true, phase: true, 800, 500);
+        Assert.Equal(0, pair.Smith.Width);
+        Assert.Equal(800, pair.Magnitude.Width);
+        Assert.Equal(800, pair.Phase.Width);
+        Assert.True(pair.Phase.Top >= pair.Magnitude.Bottom + SParameterPlotLayout.Gap - 0.1);
+
+        var smithOnly = SParameterPlotLayout.SlotsFor(smith: true, magnitude: false, phase: false, 800, 740);
+        Assert.Equal(800, smithOnly.Smith.Width);
+        Assert.True(smithOnly.Smith.Height < 740);
+        Assert.True((800 - smithOnly.Smith.Height) / 2 >= 120 - 1);
+
         var three = SParameterPlotLayout.SlotsFor(smith: true, magnitude: true, phase: true, 800, 500);
         Assert.Equal(0, three.Smith.Top);
         Assert.Equal(800, three.Smith.Width);

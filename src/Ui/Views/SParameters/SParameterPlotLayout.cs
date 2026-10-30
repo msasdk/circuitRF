@@ -84,14 +84,23 @@ public sealed class SParameterPlotLayout : Panel
 
         if (magnitude && phase)
         {
-            double col = Math.Max(0, (w - Gap) / 2);
-            return new Slots(none, new Rect(0, 0, col, h), new Rect(col + Gap, 0, col, h));
+            // Each rectangular plot spans the pane, one above the other, so neither is squeezed
+            // into half the width.
+            double row = Math.Max(0, (h - Gap) / 2);
+            return new Slots(none, new Rect(0, 0, w, row), new Rect(0, row + Gap, w, row));
         }
 
         if (smith)
         {
-            double side = Math.Min(w, h);
-            return new Slots(new Rect((w - side) / 2, (h - side) / 2, side, side), none, none);
+            // The names sit just outside the disc. A square host centres the disc and leaves the
+            // side band outside the host, so the names fall onto the circle. The host is wide
+            // enough that the centred disc keeps a strip on each side.
+            const double names = 120;
+            double disc = Math.Min(w, h);
+            if ((w - disc) / 2 >= names || w <= names + 160)
+                return new Slots(new Rect(0, 0, w, h), none, none);
+            double d = Math.Max(160, Math.Min(h, w - 2 * names));
+            return new Slots(new Rect(0, Math.Max(0, (h - d) / 2), w, d), none, none);
         }
 
         if (magnitude || phase)

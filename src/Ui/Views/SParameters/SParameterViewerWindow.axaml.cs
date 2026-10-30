@@ -283,12 +283,14 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
 
         if (model.PlotType == PlotType.Rect)
         {
-            // The list needs a strip on the right. Match it with the same strip on the left when the
-            // labels fit, so the box — not the list — sits on the pane's centre line.
-            double right = Math.Clamp((lw + LegendGap + 4) / plot.Bounds.Width, 0.06, 0.38);
-            const double labelMin = 0.12;
+            // The list needs a strip on the right. On a wide plot the same strip on the left keeps
+            // the box centred. On a narrow one — the bottom row, or the two rectangular plots side
+            // by side — mirroring it would leave the curves a thin band, so the left edge stays
+            // just wide enough for the axis figures and the box takes the rest.
+            double right = Math.Clamp((lw + LegendGap + 4) / plot.Bounds.Width, 0.05, 0.42);
+            const double labelMin = 0.11;
             double left, box;
-            if (right <= 0.5 - labelMin)
+            if (right <= 0.16)
             {
                 double margin = Math.Max(right, labelMin);
                 left = margin;
@@ -297,7 +299,7 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
             else
             {
                 left = labelMin;
-                box = Math.Max(0.4, 1 - labelMin - right);
+                box = Math.Max(0.5, 1 - labelMin - right);
             }
             var v = model.Axes.Viewport;
             if (Math.Abs(v.X - left) > 0.008 || Math.Abs(v.Width - box) > 0.008)
@@ -308,7 +310,13 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
         }
 
         var chart = PlotCanvasGeometry.ChartRect(model, plot.Bounds.Width, plot.Bounds.Height);
-        double x = Math.Clamp(chart.Left + chart.Width + LegendGap, 0, Math.Max(0, plot.Bounds.Width - lw - 2));
+        double x = chart.Left + chart.Width + LegendGap;
+        // A Smith chart's names stay outside the disc. Pulling them back to fit the host is what
+        // laid them on the circle; the host is sized to leave the strip.
+        if (model.PlotType != PlotType.Smith)
+            x = Math.Clamp(x, 0, Math.Max(0, plot.Bounds.Width - lw - 2));
+        else
+            x = Math.Max(0, x);
         double y = Math.Clamp(chart.Top + (chart.Height - lh) / 2, 0, Math.Max(0, plot.Bounds.Height - lh - 2));
         if (double.IsNaN(Canvas.GetLeft(legend)) || Math.Abs(Canvas.GetLeft(legend) - x) > 0.5)
             Canvas.SetLeft(legend, x);
