@@ -2780,7 +2780,7 @@ static int PrintHelp()
     Console.WriteLine("  --params S11,S21|all|reflections|default   the terms plotted. Default: every term up to");
     Console.WriteLine("                          4 ports, else the reflections and each S(i+1,i).");
     Console.WriteLine("  --samples               a dot at every point the file holds");
-    Console.WriteLine("  -o out.{svg,pdf,png}    the viewer's three plots, drawn by the renderer the window draws with");
+    Console.WriteLine("  -o out.{svg,pdf,png}    the viewer's four plots, drawn by the renderer the window draws with");
     Console.WriteLine("  -o out.cdd              the same plots as a Data Display");
     Console.WriteLine("  --size WxH  --scale N | --dpi N  --background opaque|transparent  --dark");
     Console.WriteLine("                          Exit 1 when the file has a defect, after writing.");

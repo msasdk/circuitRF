@@ -3,8 +3,8 @@ title: S-Parameter Viewer
 slug: reference/sparameter-viewer.html
 doc-kind: Reference Guide
 breadcrumb: Docs > Reference > S-Parameter Viewer
-lede: A Touchstone file at a glance - what it states, its reflections on a Smith chart, and every term in dB and phase over the file's own frequency range.
-keywords: S-Parameter Viewer, Touchstone, s2p, sNp, SNP, SnP, S-parameters, Smith chart, magnitude, phase, S11, S21
+lede: A Touchstone file at a glance - what it states, its reflections on a Smith chart, its transmissions on a polar chart, and every term in dB and phase over the file's own frequency range.
+keywords: S-Parameter Viewer, Touchstone, s2p, sNp, SNP, SnP, S-parameters, Smith chart, polar chart, magnitude, phase, S11, S21
 ---
 
 <nav class="toc">
@@ -12,7 +12,7 @@ keywords: S-Parameter Viewer, Touchstone, s2p, sNp, SNP, SnP, S-parameters, Smit
 <ol>
 <li><a href="#opening">Opening the viewer</a></li>
 <li><a href="#file">What the file states</a></li>
-<li><a href="#plots">The three plots</a></li>
+<li><a href="#plots">The four plots</a></li>
 <li><a href="#plots-shown">Choosing the plots</a></li>
 <li><a href="#terms">Choosing which terms to draw</a></li>
 <li><a href="#findings">Findings</a></li>
@@ -61,9 +61,9 @@ file's own points, and **Show samples** puts a dot on every one of them so the s
 
 ## Choosing the plots {#plots-shown}
 
-Three buttons sit above the plots: the Smith chart, magnitude and phase. The window opens with the
-Smith chart and magnitude on, and phase off. Each button turns its plot on or off, and with none of
-them on the pane is empty.
+Four buttons sit above the plots: the Smith chart, the polar chart, magnitude and phase. The window
+opens with the Smith chart and magnitude on, and polar and phase off. Each button turns its plot on
+or off, and with none of them on the pane is empty.
 
 | On | The pane shows |
 |---|---|
@@ -76,9 +76,11 @@ The polar chart draws the transmissions only — S21, S12 and the other off-diag
 
 The names of the traces sit beside each plot. Nothing is written above the curves.
 
-## The three plots {#plots}
+## The four plots {#plots}
 
 **Reflection** is a Smith chart of the reflection at each port &mdash; S11, S22 and so on.
+
+**Transmission** is a polar chart of the off-diagonal terms only &mdash; S21, S12 and the rest.
 
 **Magnitude** is every ticked term in dB against frequency, and **Phase** is the same terms in degrees.
 The frequency axis runs from exactly the file's lowest frequency to exactly its highest, rather than
@@ -143,7 +145,7 @@ The terms you had ticked stay ticked.
 
 ## Running it headless {#headless}
 
-[`circuitrf snp`](cli.html#snp) prints this pane's lines, and `-o` draws the three plots or writes the
+[`circuitrf snp`](cli.html#snp) prints this pane's lines, and `-o` draws the four plots or writes the
 same Data Display the button does.
 
 <pre><code class="cmd"><span class="prompt">$ </span>circuitrf snp amp.s2p
@@ -151,7 +153,7 @@ same Data Display the button does.
 
 ## What it will not do {#limits}
 
-It does not draw a polar plot, and it does not check passivity, reciprocity or causality.
+It does not check passivity, reciprocity or causality.
 
 It reads the Touchstone files the rest of circuitRF reads. A Touchstone 2 file written with keyword
 blocks (`[Version] 2.0`, `[Number of Ports]`, `[Network Data]`) is refused with the reader's own

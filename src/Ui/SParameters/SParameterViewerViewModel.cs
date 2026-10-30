@@ -118,7 +118,7 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
     public Plot MagnitudePlot => MagnitudeContainer.PlotVM.Plot;
     public Plot PhasePlot => PhaseContainer.PlotVM.Plot;
 
-    /// <summary>Raised after the three plots' traces were replaced, so the window repaints them.</summary>
+    /// <summary>Raised after the four plots' traces were replaced, so the window repaints them.</summary>
     public event EventHandler? PlotsUpdated;
 
     // ── the window's seams ────────────────────────────────────────────────────
@@ -281,7 +281,7 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
 
     // ── drawing ───────────────────────────────────────────────────────────────
 
-    /// <summary>Refills the three plots from the preset, keeping every marker on its term.</summary>
+    /// <summary>Refills the four plots from the preset, keeping every marker on its term.</summary>
     public void Redraw()
     {
         if (_source is null) return;
@@ -437,7 +437,7 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
         OpenDataDisplay?.Invoke(target);
     }
 
-    /// <summary>Removes every selected marker, as Delete does in a Data Display; the three plots stay.</summary>
+    /// <summary>Removes every selected marker, as Delete does in a Data Display; the four plots stay.</summary>
     [RelayCommand]
     public void DeleteSelectedMarkers()
     {

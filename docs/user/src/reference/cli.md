@@ -131,7 +131,7 @@ convention behind both.</p>
 | `model new`, `import`, `deembed`, `fit`, `check-charge`, `explain`, `export`, `validate`, `report` | a `.cmc` | The [Model Composer](#model)'s steps — the same functions its window calls | The `.cmc`, its cache, a `.cmodel` or a cell, a report folder — as the noun says |
 | `rail` | `.crail` | The same DC solve and via check [railRF](railrf.html)'s **Run** button calls | The ports, the ranked breakdown and the via check to stdout; `-o .csv/.npy/.mat/.txt/.svg/.pdf` |
 | `smith` | `.csmith` | The same cascade evaluator the Smith Chart window walks on every edit | The reading and the per-node table to stdout; `-o .s1p` for the load Γ, `-o .svg/.pdf/.png` for the chart |
-| `snp` | a Touchstone `.sNp` | The same reading and plots the [S-Parameter Viewer](sparameter-viewer.html) shows | What the file states, to stdout; `-o .svg/.pdf/.png` for the three plots, `-o .cdd` for a Data Display of them |
+| `snp` | a Touchstone `.sNp` | The same reading and plots the [S-Parameter Viewer](sparameter-viewer.html) shows | What the file states, to stdout; `-o .svg/.pdf/.png` for the four plots, `-o .cdd` for a Data Display of them |
 | `lvs` | a cell folder, a workspace, a `.clay` or a `.csch` | The same comparison the [LVS panel](lvs.html)'s **Compare** button calls | **Nothing** — the report to stdout; `-o report.txt` |
 | `recognize` | a `.clay`, a cell folder, or a workspace with `--cell` | Reads the board's copper as a circuit — ground, vias, ports, parts and lines as native components | **Nothing** — the report and the parts table to stdout; `-o circuit.cnl`, `--into new:<name>` for a schematic, `--parts-out parts.csv` |
 | `impedance` | a `.clay` or a cell folder | The same analysis the layout editor's [Impedance Analysis](layout-editor.html#impedance-analysis) runs | The per-trace report to stdout; `-o report.pdf` |
@@ -1508,7 +1508,7 @@ selection. A term the file does not have is a refusal naming the file's port cou
 
 | `-o` | You get |
 |---|---|
-| `out.svg`, `out.pdf`, `out.png` | The viewer's three plots: reflections on a Smith chart, magnitude in dB, phase in degrees, over exactly the file's own frequency range. |
+| `out.svg`, `out.pdf`, `out.png` | The viewer's four plots: reflections on a Smith chart, transmissions on a polar chart, magnitude in dB and phase in degrees, over exactly the file's own frequency range. |
 | `out.cdd` | The same plots as a Data Display — what the viewer's **Save as Data Display** writes for this file, so the two cannot drift. |
 
 The picture takes the same options [`plot`](#plot) takes — `--size`, `--scale`/`--dpi`,

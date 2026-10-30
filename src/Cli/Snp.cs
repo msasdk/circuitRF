@@ -18,7 +18,7 @@ namespace CircuitRF.Cli;
 /// and the page is <see cref="RenderDataDisplay.Emit"/>'s. What is here is argument parsing, refusals and
 /// reporting, on <c>src/Cli/Authoring.cs</c>' terms.</para>
 ///
-/// <para><b>With no <c>-o</c> it reports</b> the file pane. <c>-o</c> draws the three plots
+/// <para><b>With no <c>-o</c> it reports</b> the file pane. <c>-o</c> draws the four plots
 /// (<c>.svg</c>, <c>.pdf</c>, <c>.png</c>) or writes them as a Data Display (<c>.cdd</c>) — what the
 /// window's Save as Data Display writes. Exit 1 when the file has a defect, after anything asked for
 /// has been written: a picture of a broken file is still the picture the window shows.</para>
@@ -258,7 +258,7 @@ internal static class Snp
     // ── -o out.{svg,pdf,png} ─────────────────────────────────────────────────
 
     /// <summary>
-    /// The three plots through the one composer. Each is loaded by <see cref="PlotConfigLoader"/> against
+    /// The four plots through the one composer. Each is loaded by <see cref="PlotConfigLoader"/> against
     /// the same <see cref="TouchstoneSource"/> the window loads them against — not the file read a second
     /// way — so a Y- or Z-parameter file is drawn here as S exactly as it is there.
     /// </summary>

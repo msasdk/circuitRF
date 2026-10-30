@@ -1,8 +1,9 @@
 # S-Parameter Viewer
 
 A quick look at one Touchstone file: what the file states about itself, its reflections on a Smith
-chart, and every chosen term as magnitude in dB and as phase against frequency. Companion of the
-user page `docs/user/src/reference/sparameter-viewer.md` and of `cli.md` §33 (`circuitrf snp`).
+chart, its transmissions on a polar chart, and every chosen term as magnitude in dB and as phase
+against frequency. Companion of the user page `docs/user/src/reference/sparameter-viewer.md` and of
+`cli.md` §33 (`circuitrf snp`).
 
 ## What it is, and what it is not
 
@@ -11,8 +12,9 @@ trusted as a model, a measurement or a reference. It is a viewer. It edits nothi
 of its own, and it measures nothing about the network: passivity, reciprocity and causality stay where
 they already live, in `TouchstoneHealth` and `circuitrf check`.
 
-A polar plot is deliberately absent. Two rectangular plots and one Smith chart are the three pictures
-the question needs, and a fourth would be a fourth thing to look at for no new information.
+The four pictures are a Smith chart of the reflections, a polar chart of the transmissions, and
+magnitude and phase of every chosen term. The polar chart draws Sxy and Syx only. Polar and phase
+are off until their toolbar buttons are clicked.
 
 ## A window, not a document
 
@@ -45,7 +47,7 @@ only one of its kind:
 |---|---|---|
 | `TouchstoneFacts` | `src/RfCore/Data` | What the file states, and its structural defects as `Diagnostic`s |
 | `TouchstoneSource` | `src/Render/DataDisplay` | One file read once, as the `IPlotDataSources` the plots resolve against |
-| `SParameterViewerPreset` | `src/Render/DataDisplay` | The three plot configs, and the file pane's wording |
+| `SParameterViewerPreset` | `src/Render/DataDisplay` | The four plot configs, and the file pane's wording |
 | the window | `src/Ui/SParameters`, `src/Ui/Views/SParameters` | Hosts the plots and offers the choices |
 
 `circuitrf check`'s structural findings — a name that contradicts the data, a frequency axis that is
@@ -97,12 +99,12 @@ is what the file is.
 
 ## Headless
 
-`circuitrf snp` reports the file pane's own lines, draws the three plots through `RenderDataDisplay`
+`circuitrf snp` reports the file pane's own lines, draws the four plots through `RenderDataDisplay`
 and writes the `.cdd` the window saves. Exit 1 when the file has a defect, after anything asked for
 was written: a picture of a broken file is still the picture the window shows. Detail in `cli.md` §33.
 
 ## Out of scope, on purpose
 
 Touchstone 2 keyword files (`[Version] 2.0`, `[Matrix Format]`, `[Number of Ports]`) — the reader does
-not read them yet, and the viewer refuses a file the reader refuses. Polar plots. Passivity,
-reciprocity and causality, which `circuitrf check` already reports.
+not read them yet, and the viewer refuses a file the reader refuses. Passivity, reciprocity and
+causality, which `circuitrf check` already reports.

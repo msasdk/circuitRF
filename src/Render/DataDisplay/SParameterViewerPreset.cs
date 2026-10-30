@@ -1,11 +1,12 @@
 // ================================================================
-//  SParameterViewerPreset.cs  —  the S-Parameter Viewer's three plots
+//  SParameterViewerPreset.cs  —  the S-Parameter Viewer's four plots
 //
 //  A quick look at one Touchstone file: the reflection terms on a Smith
-//  chart, and every chosen term as magnitude in dB and as phase against
-//  frequency. The window shows them, `circuitrf snp -o picture` draws
-//  them and `circuitrf snp -o display.cdd` / Save as Data Display write
-//  them — all three from this composition, so they cannot disagree.
+//  chart, the transmission terms on a polar chart, and every chosen term
+//  as magnitude in dB and as phase against frequency. The window shows
+//  them, `circuitrf snp -o picture` draws them and `circuitrf snp -o
+//  display.cdd` / Save as Data Display write them — all four from this
+//  composition, so they cannot disagree.
 //
 //  THE FILE'S OWN AXIS, NOT A NICE ONE. The frequency axis is pinned to
 //  exactly the file's lowest and highest point, and a log-spaced file
@@ -243,8 +244,8 @@ public static class SParameterViewerPreset
     }
 
     /// <summary>
-    /// The three plots over <paramref name="source"/>, every trace bound to its path, laid out
-    /// Smith chart on the left and the two rectangular plots stacked beside it.
+    /// The four plots over <paramref name="source"/>, every trace bound to its path. The Smith
+    /// chart and the polar chart are on the left; magnitude and phase stack beside them.
     /// </summary>
     /// <param name="showSamples">Draw a dot at every point the file holds.</param>
     public static IReadOnlyList<ComposedPlot> Compose(TouchstoneSource source, IReadOnlyList<Term> selection,
@@ -357,7 +358,7 @@ public static class SParameterViewerPreset
 
     /// <summary>
     /// The palette slot a term is drawn in: its place in the selection, so the terms on show take the
-    /// palette's first, most distinct colours and one term has one colour on all three plots.
+    /// palette's first, most distinct colours and one term has one colour on all four plots.
     /// </summary>
     public static int ColorIndexOf(Term t, IReadOnlyList<Term> selection)
     {

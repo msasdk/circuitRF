@@ -46,7 +46,7 @@ framework, not the GUI referencing the CLI — and `CircuitRF.Cli.Verbs` has its
 | `fields` | `.cnl` or `.csch` | its `fields` analyses through `CircuitEvaluation` — an EM block's per-port fields recombined by the circuit's waves (`FieldCosimulation`); no EM run | stdout notes and scalars; SAR and B1 volumes and records beside the field set; `-o .mat/.npy/.txt` for the scalars — §28 |
 | `rail` | `.crail` (or a `.clay` / `.csch` / cell folder with one beside it) | `RailOrder` + `RailDcRun` — the extractor, the solve and the via check `src/Design/RailRf` already holds | stdout tables; `-o .csv/.npy/.mat/.txt` for the numbers and `.svg/.pdf` for the report page — §17 |
 | `smith` | `.csmith` | `SmithCascade` + `SmithReadings` + `SmithBand` — the evaluator the Smith Chart window's status strip reads on every edit | stdout reading + the per-node walk; `-o .s1p` for the load Γ and `.svg/.pdf/.png` for the chart — §18 |
-| `snp` | a Touchstone `.sNp` | `TouchstoneSource` + `SParameterViewerPreset` — the reading and the plots the S-Parameter Viewer shows | stdout file pane; `-o .svg/.pdf/.png` the three plots, `-o .cdd` the Data Display — §33 |
+| `snp` | a Touchstone `.sNp` | `TouchstoneSource` + `SParameterViewerPreset` — the reading and the plots the S-Parameter Viewer shows | stdout file pane; `-o .svg/.pdf/.png` the four plots, `-o .cdd` the Data Display — §33 |
 | `opt` | `.cnl` or `.csch` | `OptimizationRun` — the Optimizer window's run — over the `tune`, `goal` and `optimize` lines | stdout result tables; `-o .npy` the best point's full results plus the `opt` history group; `--history .npy`; `--save-preset` the one write to the design — §24 |
 | `yield` | `.cnl` or `.csch` | `StatisticalRun` — the Yield panel's run — over the tolerances, the yield-spec goals and the `statistics` line; nouns `mc`, `estimate`, `trial` | stdout yield, goals, statistics and worst-trial tables; writes `<design>.yield.npy` (`-o` moves it); `--save-preset`/`--save-corner` with `--trial` the two writes to the design — §25 |
 | `elab` | `.cnl` or `.csch` | elaboration only | the elaborated netlist, for development |
@@ -4427,7 +4427,7 @@ TEXT read back from the PDF, and the verb as a process writing the in-process ca
 ```
 circuitrf snp amp.s2p                                          # the file pane
 circuitrf snp coupler.s4p --params reflections,S21 --samples   # chosen terms, a dot per point
-circuitrf snp amp.s2p -o amp.svg                               # the three plots
+circuitrf snp amp.s2p -o amp.svg                               # the four plots
 circuitrf snp amp.s2p -o amp.cdd                               # the Data Display the window saves
 ```
 
@@ -4450,7 +4450,7 @@ The kind is inferred through `DocumentKinds.Classify`, and any other kind is a r
 |---|---|
 | `--params <list>` | The terms drawn: `S21`, `S(2,1)` from ten ports up, comma-separated, plus the words `all`, `reflections` and `default`. The default is the window's own opening selection — every term up to four ports, else the reflections and each forward neighbour. A term the file does not have is `touchstone.no-such-parameter`, naming the port count. |
 | `--samples` | A dot at every point the file holds. |
-| `-o out.{svg,pdf,png}` | The three plots. |
+| `-o out.{svg,pdf,png}` | The four plots. |
 | `-o out.cdd` | The plots as a Data Display — `SParameterViewerPreset.Build`, which is what the window's Save as Data Display writes, so the two are the same bytes. |
 | `--size`, `--scale`/`--dpi`, `--background`, `--dark` | `plot`'s picture options, spelling for spelling and refusal for refusal. |
 
