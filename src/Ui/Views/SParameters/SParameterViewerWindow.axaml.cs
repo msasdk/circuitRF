@@ -387,7 +387,7 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
         foreach (var (other, _, otherMark) in _hosted)
             if (!ReferenceEquals(other, plot) && otherMark.Clear()) other.InvalidateVisual();
 
-        if (plot.Name == "MagnitudePlotControl")
+        if (plot.Name is "MagnitudePlotControl" or "PhasePlotControl")
         {
             if (MagnitudeCursor(plot, pos, tf, mark, out string cursorText))
             {
@@ -440,7 +440,7 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
     }
 
     /// <summary>
-    /// The magnitude plot reads every trace at the pointer's frequency: one vertical line, a dot where
+    /// A rectangular plot reads every trace at the pointer's frequency: one vertical line, a dot where
     /// it crosses each curve, and every value in the popup. False when the pointer is outside the plot
     /// box or off the frequency span.
     /// </summary>
@@ -542,9 +542,9 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
 }
 
 /// <summary>
-/// Hover chrome. On the Smith chart and the phase plot it is a dot on the nearest sample. On the
-/// magnitude plot it is a vertical line at the pointer's frequency, with a dot where the line crosses
-/// each trace. It draws and nothing else: a press is the plot's own, so panning and marker placement
+/// Hover chrome. On the Smith chart it is a dot on the nearest sample. On the magnitude and phase
+/// plots it is a vertical line at the pointer's frequency, with a dot where the line crosses each
+/// trace. It draws and nothing else: a press is the plot's own, so panning and marker placement
 /// are unchanged.
 /// </summary>
 sealed class HoverMark : IPlotOverlay

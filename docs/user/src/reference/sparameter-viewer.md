@@ -86,9 +86,9 @@ phase axis is fixed at &plusmn;180&deg;, which is the whole of what a wrapped ph
 The axis unit follows the span. A file written in Hz that runs from 1 to 5 GHz reads in GHz, because
 an axis of 1E+09 to 5E+09 says the same thing badly.
 
-Hover the magnitude plot and a vertical line crosses every trace at that frequency, with each value
-in the box beside the pointer. On the Smith chart and the phase plot the marker sits on the nearest
-sample. A double-click still drops a marker you can drag and keep, and
+Hover the magnitude or phase plot and a vertical line crosses every trace at that frequency, with
+each value in the box beside the pointer. On the Smith chart the marker sits on the nearest sample.
+A double-click still drops a marker you can drag and keep, and
 **Delete** removes the selected ones. Arrow keys step a kept marker one sample at a time.
 
 A file of Y- or Z-parameters is drawn as S-parameters at the file's own reference, because a Smith
