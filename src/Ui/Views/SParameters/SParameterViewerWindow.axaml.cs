@@ -313,18 +313,51 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
         }
 
         var chart = PlotCanvasGeometry.ChartRect(model, plot.Bounds.Width, plot.Bounds.Height);
-        double x = chart.Left + chart.Width + LegendGap;
-        // A round chart's names stay outside the disc. Pulling them back to fit the host is what
-        // laid them on the circle; the host is sized to leave the strip.
-        if (model.PlotType is not (PlotType.Smith or PlotType.Polar))
-            x = Math.Clamp(x, 0, Math.Max(0, plot.Bounds.Width - lw - 2));
+        double x, y;
+        if (model.PlotType is PlotType.Smith or PlotType.Polar)
+            (x, y) = RoundLabel(chart, lw, lh, plot.Bounds.Width, plot.Bounds.Height);
         else
-            x = Math.Max(0, x);
-        double y = Math.Clamp(chart.Top + (chart.Height - lh) / 2, 0, Math.Max(0, plot.Bounds.Height - lh - 2));
+        {
+            x = Math.Clamp(chart.Left + chart.Width + LegendGap, 0, Math.Max(0, plot.Bounds.Width - lw - 2));
+            y = Math.Clamp(chart.Top + (chart.Height - lh) / 2, 0, Math.Max(0, plot.Bounds.Height - lh - 2));
+        }
         if (double.IsNaN(Canvas.GetLeft(legend)) || Math.Abs(Canvas.GetLeft(legend) - x) > 0.5)
             Canvas.SetLeft(legend, x);
         if (double.IsNaN(Canvas.GetTop(legend)) || Math.Abs(Canvas.GetTop(legend) - y) > 0.5)
             Canvas.SetTop(legend, y);
+    }
+
+    /// <summary>
+    /// Where the names of a round chart go: up in the corner, just outside the arc. The corner of the
+    /// disc's box is empty, so the list can sit inward of the circle's widest point and still clear
+    /// the chart — which is what keeps it from being cut off at the edge of the host.
+    /// </summary>
+    private static (double X, double Y) RoundLabel(
+        (double Left, double Top, double Width, double Height) chart,
+        double labelW, double labelH, double hostW, double hostH)
+    {
+        double cx = chart.Left + chart.Width / 2, cy = chart.Top + chart.Height / 2;
+        double r = Math.Min(chart.Width, chart.Height) / 2;
+        const double pad = 4;
+
+        bool Fits(double tryY, out double xTry)
+        {
+            xTry = 0;
+            if (tryY < 0 || tryY + labelH > hostH - 2) return false;
+            double yNear = Math.Clamp(cy, tryY, tryY + labelH);
+            double dy = yNear - cy;
+            double half = Math.Abs(dy) >= r ? 0 : Math.Sqrt(r * r - dy * dy);
+            xTry = Math.Abs(dy) >= r
+                ? Math.Max(0, chart.Left + chart.Width - labelW - pad)
+                : cx + half + pad;
+            return xTry + labelW <= hostW - 2;
+        }
+
+        for (double tryY = Math.Max(0, chart.Top); tryY + labelH < cy && tryY + labelH < hostH; tryY += 3)
+            if (Fits(tryY, out double xTry)) return (xTry, tryY);
+
+        return (Math.Max(0, Math.Min(chart.Left + chart.Width - labelW, hostW - labelW - 2)),
+                Math.Max(0, chart.Top));
     }
 
     /// <summary>Scales the plot's own weights so the rendered stroke is <see cref="StrokeUnit"/>, not a
