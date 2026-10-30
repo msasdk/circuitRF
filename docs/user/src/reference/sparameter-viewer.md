@@ -67,10 +67,12 @@ them on the pane is empty.
 
 | On | The pane shows |
 |---|---|
-| One | That plot, centred in the pane. |
-| The Smith chart and one rectangular plot | The Smith chart on top and the other below it, with a gap between them. |
-| Magnitude and phase | One above the other, each across the pane. |
-| All three | The Smith chart across the top, magnitude at the bottom left and phase at the bottom right. |
+| One | That plot, filling the pane. |
+| Two of the same shape | Side by side: Smith with polar, or magnitude with phase. |
+| Two of different shapes | Stacked, the round chart on top and the rectangular plot below. |
+| All four | Smith and polar across the top, magnitude and phase across the bottom. |
+
+The polar chart draws the transmissions only — S21, S12 and the other off-diagonal terms — never a reflection.
 
 The names of the traces sit beside each plot. Nothing is written above the curves.
 
@@ -87,8 +89,9 @@ The axis unit follows the span. A file written in Hz that runs from 1 to 5 GHz r
 an axis of 1E+09 to 5E+09 says the same thing badly.
 
 Hover the magnitude or phase plot and a vertical line crosses every trace at that frequency, with
-each value in the box beside the pointer. On the Smith chart the marker sits on the nearest sample,
-and a reflection also states the impedance it stands for at the file's reference.
+each value in the box beside the pointer. On the Smith chart and the polar chart the marker sits on
+the nearest sample. A Smith reflection also states the impedance it stands for at the file's reference,
+under the S-parameter, with the frequency first.
 A double-click still drops a marker you can drag and keep, and
 **Delete** removes the selected ones. Arrow keys step a kept marker one sample at a time.
 

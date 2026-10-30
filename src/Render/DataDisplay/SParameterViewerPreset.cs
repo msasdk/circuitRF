@@ -47,8 +47,8 @@ public static class SParameterViewerPreset
     /// name, and the viewer's tick boxes carry each term's colour anyway.</summary>
     public const int LegendUpToTerms = 6;
 
-    /// <summary>The three plots, in the order they are laid out.</summary>
-    public enum PlotKind { Smith, Magnitude, Phase }
+    /// <summary>The four plots, in the order they are laid out on a saved Data Display.</summary>
+    public enum PlotKind { Smith, Polar, Magnitude, Phase }
 
     /// <summary>One placed plot and what it is.</summary>
     public sealed record ComposedPlot(PlotKind Kind, PlotContainerConfig Config);
@@ -263,6 +263,16 @@ public static class SParameterViewerPreset
                                   .Select(t => Network(t, ColorIndexOf(t, selection), sourceRef, DependentVarFormat.Complex, showSamples))],
         };
 
+        var polar = new PlotContainerConfig
+        {
+            PlotType = PlotType.Polar, FreqUnit = unit,
+            Left = Gap, Top = Gap + SmithSize + Gap, Width = SmithSize, Height = SmithSize,
+            CustomTitle = "Transmission", CustomTitleOn = true,
+            Legend = LegendPlacement.Inside,
+            Traces = [.. selection.Where(t => !t.IsReflection)
+                                  .Select(t => Network(t, ColorIndexOf(t, selection), sourceRef, DependentVarFormat.Complex, showSamples))],
+        };
+
         var magnitude = Rect("Magnitude", "Magnitude (dB)", unit, Gap + SmithSize + Gap, Gap,
             [.. selection.Select(t => Network(t, ColorIndexOf(t, selection), sourceRef, DependentVarFormat.Db, showSamples))],
             FrequencyAxis(source, unit, phase: false));
@@ -274,6 +284,7 @@ public static class SParameterViewerPreset
         return
         [
             new ComposedPlot(PlotKind.Smith, smith),
+            new ComposedPlot(PlotKind.Polar, polar),
             new ComposedPlot(PlotKind.Magnitude, magnitude),
             new ComposedPlot(PlotKind.Phase, phase),
         ];

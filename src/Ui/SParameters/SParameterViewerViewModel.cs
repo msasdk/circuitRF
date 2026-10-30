@@ -63,8 +63,8 @@ public sealed partial class SParameterTermViewModel : ObservableObject
     [ObservableProperty] private SKColor _color = SKColors.Transparent;
 
     public string Tooltip => IsReflection
-        ? $"{Name}: the reflection at port {Term.Row + 1}. Drawn on all three plots."
-        : $"{Name}: port {Term.Col + 1} to port {Term.Row + 1}. Drawn on the magnitude and phase plots.";
+        ? $"{Name}: the reflection at port {Term.Row + 1}. Drawn on the Smith chart and on magnitude and phase."
+        : $"{Name}: port {Term.Col + 1} to port {Term.Row + 1}. Drawn on the polar chart and on magnitude and phase.";
 
     /// <summary>Sets the tick without asking for a redraw — for the bulk choices, which redraw once.</summary>
     internal void SetQuietly(bool value)
@@ -99,8 +99,9 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
     public SParameterViewerViewModel()
     {
         SmithContainer     = PlotHost.AddPlot(PlotType.Smith, FreqUnit.GHz, left: 0, top: 0, width: 420, height: 420);
-        MagnitudeContainer = PlotHost.AddPlot(PlotType.Rect,  FreqUnit.GHz, left: 0, top: 420, width: 520, height: 321);
-        PhaseContainer     = PlotHost.AddPlot(PlotType.Rect,  FreqUnit.GHz, left: 0, top: 741, width: 520, height: 321);
+        PolarContainer     = PlotHost.AddPlot(PlotType.Polar, FreqUnit.GHz, left: 0, top: 420, width: 420, height: 420);
+        MagnitudeContainer = PlotHost.AddPlot(PlotType.Rect,  FreqUnit.GHz, left: 0, top: 840, width: 520, height: 321);
+        PhaseContainer     = PlotHost.AddPlot(PlotType.Rect,  FreqUnit.GHz, left: 0, top: 1161, width: 520, height: 321);
         PlotHost.SelectOnly((PlotContainerViewModel?)null);
         Status = "Open a Touchstone file (.s1p … .sNp) to view it.";
     }
@@ -109,9 +110,11 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
 
     public DataDisplayViewModel PlotHost { get; } = new(new DataSourceLibraryViewModel(), addEmptyPlot: false, selectEmptyPlot: false);
     public PlotContainerViewModel SmithContainer { get; }
+    public PlotContainerViewModel PolarContainer { get; }
     public PlotContainerViewModel MagnitudeContainer { get; }
     public PlotContainerViewModel PhaseContainer { get; }
     public Plot SmithPlot => SmithContainer.PlotVM.Plot;
+    public Plot PolarPlot => PolarContainer.PlotVM.Plot;
     public Plot MagnitudePlot => MagnitudeContainer.PlotVM.Plot;
     public Plot PhasePlot => PhaseContainer.PlotVM.Plot;
 
@@ -152,10 +155,11 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
     [ObservableProperty] private bool _showSamples;
 
     /// <summary>
-    /// Which plots the toolbar has on. The window opens on the Smith chart and magnitude; phase is a
-    /// click away. Every one of them can be off, and then the pane is empty.
+    /// Which plots the toolbar has on. The window opens on the Smith chart and magnitude; polar and
+    /// phase are a click away. Every one of them can be off, and then the pane is empty.
     /// </summary>
     [ObservableProperty] private bool _showSmith = true;
+    [ObservableProperty] private bool _showPolar;
     [ObservableProperty] private bool _showMagnitude = true;
     [ObservableProperty] private bool _showPhase;
 
@@ -184,6 +188,7 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
     /// <summary>Trace names drawn beside each plot. Empty past <see cref="SParameterViewerPreset.LegendUpToTerms"/>,
     /// where the list would take the width the curves need; the tick boxes still carry the colours.</summary>
     public ObservableCollection<SParameterLegendEntry> SmithLegend { get; } = [];
+    public ObservableCollection<SParameterLegendEntry> PolarLegend { get; } = [];
     public ObservableCollection<SParameterLegendEntry> MagnitudeLegend { get; } = [];
     public ObservableCollection<SParameterLegendEntry> PhaseLegend { get; } = [];
 
@@ -289,6 +294,7 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
         foreach (var composed in SParameterViewerPreset.Compose(_source, selection, ShowSamples))
             Refill(ContainerOf(composed.Kind), composed.Config, _source);
         FillLegend(SmithLegend, SmithPlot);
+        FillLegend(PolarLegend, PolarPlot);
         FillLegend(MagnitudeLegend, MagnitudePlot);
         FillLegend(PhaseLegend, PhasePlot);
 
@@ -303,6 +309,7 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
     private PlotContainerViewModel ContainerOf(SParameterViewerPreset.PlotKind kind) => kind switch
     {
         SParameterViewerPreset.PlotKind.Smith     => SmithContainer,
+        SParameterViewerPreset.PlotKind.Polar     => PolarContainer,
         SParameterViewerPreset.PlotKind.Magnitude => MagnitudeContainer,
         _                                         => PhaseContainer,
     };
@@ -344,7 +351,7 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
     {
         plot.CustomTitleOn = false;
         plot.Legend = LegendPlacement.Off;
-        if (plot.PlotType == PlotType.Smith)
+        if (plot.PlotType is PlotType.Smith or PlotType.Polar)
         {
             foreach (var t in plot.Traces) t.ExcludeFromAxisLabels = true;
             return;
@@ -374,13 +381,14 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
 
     private void ClearPlots()
     {
-        foreach (var c in new[] { SmithContainer, MagnitudeContainer, PhaseContainer })
+        foreach (var c in new[] { SmithContainer, PolarContainer, MagnitudeContainer, PhaseContainer })
         {
             c.PlotVM.Plot.Traces.Clear();
             c.OnPlotChanged(c, EventArgs.Empty);
             c.RequestPlotRedraw();
         }
         SmithLegend.Clear();
+        PolarLegend.Clear();
         MagnitudeLegend.Clear();
         PhaseLegend.Clear();
         PlotsUpdated?.Invoke(this, EventArgs.Empty);

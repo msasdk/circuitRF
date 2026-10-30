@@ -268,6 +268,10 @@
                                 <ddc:PlotTypeGlyphControl Kind="Smith" Width="16" Height="16"
                                                           Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                             </ToggleButton>
+                            <ToggleButton Classes="plotpick" IsChecked="{Binding ShowPolar, Mode=TwoWay}" ToolTip.Tip="Polar chart — the transmissions">
+                                <ddc:PlotTypeGlyphControl Kind="Polar" Width="16" Height="16"
+                                                          Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            </ToggleButton>
                             <ToggleButton Classes="plotpick" IsChecked="{Binding ShowMagnitude, Mode=TwoWay}" ToolTip.Tip="Magnitude, dB against frequency">
                                 <mi:MaterialIcon Kind="ChartLine" Width="16" Height="16"/>
                             </ToggleButton>
@@ -278,14 +282,23 @@
                         <!-- A hidden host is given no rectangle, and the pane clips, so a Smith chart cannot
                              paint over the plots turned on around it. -->
                         <sp:SParameterPlotLayout Name="PlotGrid" Grid.Row="1" ClipToBounds="True"
-                                                 ShowSmith="{Binding ShowSmith}" ShowMagnitude="{Binding ShowMagnitude}"
-                                                 ShowPhase="{Binding ShowPhase}">
+                                                 ShowSmith="{Binding ShowSmith}" ShowPolar="{Binding ShowPolar}"
+                                                 ShowMagnitude="{Binding ShowMagnitude}" ShowPhase="{Binding ShowPhase}">
                         <Grid Name="SmithHost" ClipToBounds="True" IsVisible="{Binding ShowSmith}">
                             <ddc:PlotControl Name="SmithPlotControl" ClipToBounds="True"
                                              Plot="{Binding SmithPlot}" Library="{Binding PlotHost.Library}"
                                              CanDeletePlot="False" CanEditPlotProperties="False"/>
                             <Canvas IsHitTestVisible="False">
                                 <ItemsControl Name="SmithLegendList" ItemsSource="{Binding SmithLegend}"
+                                              ItemTemplate="{StaticResource SideLegendItem}"/>
+                            </Canvas>
+                        </Grid>
+                        <Grid Name="PolarHost" ClipToBounds="True" IsVisible="{Binding ShowPolar}">
+                            <ddc:PlotControl Name="PolarPlotControl" ClipToBounds="True"
+                                             Plot="{Binding PolarPlot}" Library="{Binding PlotHost.Library}"
+                                             CanDeletePlot="False" CanEditPlotProperties="False"/>
+                            <Canvas IsHitTestVisible="False">
+                                <ItemsControl Name="PolarLegendList" ItemsSource="{Binding PolarLegend}"
                                               ItemTemplate="{StaticResource SideLegendItem}"/>
                             </Canvas>
                         </Grid>

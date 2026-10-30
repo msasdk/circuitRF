@@ -68,16 +68,22 @@ public sealed class SParameterViewerTests : IDisposable
         var source = Read(Write(2, Uniform(1e9, 0.1e9, 41)));
         var plots = SParameterViewerPreset.Compose(source, SParameterViewerPreset.DefaultSelection(2), showSamples: false);
 
-        Assert.Equal([SParameterViewerPreset.PlotKind.Smith, SParameterViewerPreset.PlotKind.Magnitude, SParameterViewerPreset.PlotKind.Phase],
+        Assert.Equal([SParameterViewerPreset.PlotKind.Smith, SParameterViewerPreset.PlotKind.Polar,
+                      SParameterViewerPreset.PlotKind.Magnitude, SParameterViewerPreset.PlotKind.Phase],
                      plots.Select(p => p.Kind));
         var smith = plots[0].Config;
         Assert.Equal(PlotType.Smith, smith.PlotType);
         Assert.Equal([(0, 0), (1, 1)], smith.Traces.Select(t => (t.Row, t.Col)));
         Assert.All(smith.Traces, t => Assert.Equal(DependentVarFormat.Complex, t.YAxis));
 
-        Assert.Equal([(0, 0), (0, 1), (1, 0), (1, 1)], plots[1].Config.Traces.Select(t => (t.Row, t.Col)));
-        Assert.All(plots[1].Config.Traces, t => Assert.Equal(DependentVarFormat.Db, t.YAxis));
-        Assert.All(plots[2].Config.Traces, t => Assert.Equal(DependentVarFormat.Phase, t.YAxis));
+        var polar = plots[1].Config;
+        Assert.Equal(PlotType.Polar, polar.PlotType);
+        Assert.Equal([(0, 1), (1, 0)], polar.Traces.Select(t => (t.Row, t.Col)));
+        Assert.All(polar.Traces, t => Assert.Equal(DependentVarFormat.Complex, t.YAxis));
+
+        Assert.Equal([(0, 0), (0, 1), (1, 0), (1, 1)], plots[2].Config.Traces.Select(t => (t.Row, t.Col)));
+        Assert.All(plots[2].Config.Traces, t => Assert.Equal(DependentVarFormat.Db, t.YAxis));
+        Assert.All(plots[3].Config.Traces, t => Assert.Equal(DependentVarFormat.Phase, t.YAxis));
         Assert.All(plots.SelectMany(p => p.Config.Traces), t => Assert.Equal(source.Path, t.SourcePath));
     }
 
@@ -87,7 +93,7 @@ public sealed class SParameterViewerTests : IDisposable
     {
         var source = Read(Write(2, Uniform(1.23e9, 0.01e9, 101)));
         var plots = SParameterViewerPreset.Compose(source, SParameterViewerPreset.DefaultSelection(2), false);
-        foreach (var rect in plots.Skip(1).Select(p => p.Config))
+        foreach (var rect in plots.Where(p => p.Config.PlotType == PlotType.Rect).Select(p => p.Config))
         {
             Assert.Equal(FreqUnit.GHz, rect.FreqUnit);
             Assert.False(rect.Axes!.AutoscaleX);
@@ -95,14 +101,15 @@ public sealed class SParameterViewerTests : IDisposable
             Assert.Equal(2.23 - 1.23, rect.Axes.WindowWidth, 9);
             Assert.Equal(AxisScale.Linear, rect.Axes.XScale);
         }
-        var phase = plots[2].Config.Axes!;
+        var phase = plots.Single(p => p.Kind == SParameterViewerPreset.PlotKind.Phase).Config.Axes!;
         Assert.False(phase.AutoscaleY);
         Assert.Equal(-180, phase.WindowY);
         Assert.Equal(360, phase.WindowHeight);
-        Assert.True(plots[1].Config.Axes!.AutoscaleY);
+        var magnitude = plots.Single(p => p.Kind == SParameterViewerPreset.PlotKind.Magnitude).Config;
+        Assert.True(magnitude.Axes!.AutoscaleY);
 
         // And once loaded, the plot shows exactly that window and the file's points, one per frequency.
-        var loaded = PlotConfigLoader.LoadPlot(plots[1].Config, source);
+        var loaded = PlotConfigLoader.LoadPlot(magnitude, source);
         Assert.Equal(1.23, loaded.Axes.Window.X, 6);
         Assert.Equal(2.23, loaded.Axes.Window.X + loaded.Axes.Window.Width, 6);
         Assert.All(loaded.Traces, t => Assert.Equal(101, t.Points.Count));
@@ -113,7 +120,8 @@ public sealed class SParameterViewerTests : IDisposable
     {
         var source = Read(Write(1, [.. Enumerable.Range(0, 31).Select(i => 1e3 * Math.Pow(10, i / 10.0))]));
         Assert.Equal(FrequencyGrid.Logarithmic, source.Facts.Grid);
-        var rect = SParameterViewerPreset.Compose(source, SParameterViewerPreset.DefaultSelection(1), false)[1].Config;
+        var rect = SParameterViewerPreset.Compose(source, SParameterViewerPreset.DefaultSelection(1), false)
+            .Single(p => p.Kind == SParameterViewerPreset.PlotKind.Magnitude).Config;
         Assert.Equal(AxisScale.Log, rect.Axes!.XScale);
         Assert.Equal(FreqUnit.MHz, rect.FreqUnit);
     }
@@ -132,9 +140,10 @@ public sealed class SParameterViewerTests : IDisposable
         var source = Read(Write(2, Uniform(1e9, 0.1e9, 11)));
         var plots = SParameterViewerPreset.Compose(source, SParameterViewerPreset.DefaultSelection(2), false);
         int s22 = plots[0].Config.Traces.Single(t => t.Row == 1 && t.Col == 1).Properties.LineColorIndex;
-        Assert.Equal(s22, plots[1].Config.Traces.Single(t => t.Row == 1 && t.Col == 1).Properties.LineColorIndex);
         Assert.Equal(s22, plots[2].Config.Traces.Single(t => t.Row == 1 && t.Col == 1).Properties.LineColorIndex);
-        Assert.Equal(4, plots[1].Config.Traces.Select(t => t.Properties.LineColorIndex).Distinct().Count());
+        Assert.Equal(s22, plots[3].Config.Traces.Single(t => t.Row == 1 && t.Col == 1).Properties.LineColorIndex);
+        Assert.DoesNotContain(plots[1].Config.Traces, t => t.Row == t.Col);
+        Assert.Equal(4, plots[2].Config.Traces.Select(t => t.Properties.LineColorIndex).Distinct().Count());
     }
 
     [Fact]
@@ -212,32 +221,41 @@ public sealed class SParameterViewerTests : IDisposable
     [Fact]
     public void ThePlotsAreCentred_StackedWithAGap_AndSplitWhenAllThreeAreOn()
     {
-        var one = SParameterPlotLayout.SlotsFor(smith: false, magnitude: true, phase: false, 800, 500);
+        var one = SParameterPlotLayout.SlotsFor(smith: false, polar: false, magnitude: true, phase: false, 800, 500);
         Assert.Equal(0, one.Smith.Width);
         Assert.InRange((one.Magnitude.Left + one.Magnitude.Right) / 2, 399, 401);
         Assert.True(one.Magnitude.Top > 1);
         Assert.True(one.Magnitude.Bottom < 499);
 
-        var two = SParameterPlotLayout.SlotsFor(smith: true, magnitude: true, phase: false, 800, 500);
+        var two = SParameterPlotLayout.SlotsFor(smith: true, polar: false, magnitude: true, phase: false, 800, 500);
         Assert.True(two.Magnitude.Top >= two.Smith.Bottom + SParameterPlotLayout.Gap - 0.1);
         Assert.Equal(800, two.Smith.Width);
         Assert.Equal(800, two.Magnitude.Width);
         Assert.Equal(0, two.Phase.Width);
 
-        var pair = SParameterPlotLayout.SlotsFor(smith: false, magnitude: true, phase: true, 800, 500);
+        var pair = SParameterPlotLayout.SlotsFor(smith: false, polar: false, magnitude: true, phase: true, 800, 500);
         Assert.Equal(0, pair.Smith.Width);
-        Assert.Equal(800, pair.Magnitude.Width);
-        Assert.Equal(800, pair.Phase.Width);
-        Assert.Equal(16, pair.Magnitude.Top);
-        Assert.InRange(pair.Phase.Bottom, 499, 501);
-        Assert.Equal(8, pair.Phase.Top - pair.Magnitude.Bottom);
+        Assert.Equal(pair.Magnitude.Top, pair.Phase.Top);
+        Assert.Equal(500, pair.Magnitude.Height);
+        Assert.True(pair.Phase.Left >= pair.Magnitude.Right + SParameterPlotLayout.Gap - 0.1);
 
-        var smithOnly = SParameterPlotLayout.SlotsFor(smith: true, magnitude: false, phase: false, 800, 740);
+        var rounds = SParameterPlotLayout.SlotsFor(smith: true, polar: true, magnitude: false, phase: false, 800, 500);
+        Assert.Equal(rounds.Smith.Top, rounds.Polar.Top);
+        Assert.True(rounds.Polar.Left >= rounds.Smith.Right + SParameterPlotLayout.Gap - 0.1);
+
+        var smithOnly = SParameterPlotLayout.SlotsFor(smith: true, polar: false, magnitude: false, phase: false, 800, 740);
         Assert.Equal(800, smithOnly.Smith.Width);
         Assert.True(smithOnly.Smith.Height < 740);
         Assert.True((800 - smithOnly.Smith.Height) / 2 >= 120 - 1);
 
-        var three = SParameterPlotLayout.SlotsFor(smith: true, magnitude: true, phase: true, 800, 500);
+        var four = SParameterPlotLayout.SlotsFor(smith: true, polar: true, magnitude: true, phase: true, 800, 500);
+        Assert.Equal(four.Smith.Top, four.Polar.Top);
+        Assert.Equal(four.Magnitude.Top, four.Phase.Top);
+        Assert.True(four.Polar.Left >= four.Smith.Right + SParameterPlotLayout.Gap - 0.1);
+        Assert.True(four.Magnitude.Top >= four.Smith.Bottom + SParameterPlotLayout.Gap - 0.1);
+        Assert.True(four.Phase.Left >= four.Magnitude.Right + SParameterPlotLayout.Gap - 0.1);
+
+        var three = SParameterPlotLayout.SlotsFor(smith: true, polar: false, magnitude: true, phase: true, 800, 500);
         Assert.Equal(0, three.Smith.Top);
         Assert.Equal(800, three.Smith.Width);
         Assert.True(three.Magnitude.Top >= three.Smith.Bottom + SParameterPlotLayout.Gap - 0.1);
@@ -252,12 +270,14 @@ public sealed class SParameterViewerTests : IDisposable
         var vm = new SParameterViewerViewModel();
         Assert.True(vm.ShowSmith);
         Assert.True(vm.ShowMagnitude);
+        Assert.False(vm.ShowPolar);
         Assert.False(vm.ShowPhase);
 
         vm.ShowSmith = false;
         vm.ShowMagnitude = false;
         Assert.False(vm.ShowSmith);
         Assert.False(vm.ShowMagnitude);
+        Assert.False(vm.ShowPolar);
         Assert.False(vm.ShowPhase);
     }
 
@@ -321,6 +341,7 @@ public sealed class SParameterViewerTests : IDisposable
         Assert.Equal(["S11", "S12", "S21", "S22"], vm.Terms.Select(t => t.Name));
         Assert.All(vm.Terms, t => Assert.True(t.IsChecked));
         Assert.Equal(2, vm.SmithPlot.Traces.Count);
+        Assert.Equal([(0, 1), (1, 0)], vm.PolarPlot.Traces.Select(t => (t.Row, t.Col)));
         Assert.Equal(4, vm.MagnitudePlot.Traces.Count);
         Assert.Equal(4, vm.PhasePlot.Traces.Count);
         Assert.False(vm.HasFindings);

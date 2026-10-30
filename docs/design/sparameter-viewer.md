@@ -74,9 +74,11 @@ dB and phase over ±180°. A term's colour is its place in the selection, so it 
 every plot and the terms on show take the palette's first colours. Past six terms a rectangular plot
 draws no legend: sixteen entries cover the curves they name, and the tick boxes carry the colours.
 
-The window opens on the Smith chart and magnitude. Every toolbar button can be off, and then the
-pane is empty. One plot is centred. The Smith chart with one rectangular plot stacks the two with a
-gap. All three put the Smith chart across the top and magnitude and phase side by side beneath it.
+The window opens on the Smith chart and magnitude. Polar and phase are off until clicked. Every
+toolbar button can be off, and then the pane is empty. One plot fills the pane. Two of the same
+shape sit side by side; two of different shapes stack, the round chart on top. All four are Smith
+and polar across the top, magnitude and phase across the bottom. The polar chart draws transmissions
+only.
 Strokes, grid lines and axis figures are held at one weight, so a plot that fills the pane is not
 drawn with a heavier pen than one sharing it. The window draws no title above a plot and lists the
 trace names beside it, up to the same six; the saved `.cdd` and `circuitrf snp` keep the preset's

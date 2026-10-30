@@ -28,7 +28,7 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
     /// <summary>One viewer per file: a second request for a file already on show brings that window forward.</summary>
     private static readonly Dictionary<string, SParameterViewerWindow> OpenByPath = new(StringComparer.OrdinalIgnoreCase);
 
-    private static readonly string[] PlotNames = ["SmithPlotControl", "MagnitudePlotControl", "PhasePlotControl"];
+    private static readonly string[] PlotNames = ["SmithPlotControl", "PolarPlotControl", "MagnitudePlotControl", "PhasePlotControl"];
 
     private readonly System.Collections.ObjectModel.ObservableCollection<MarkerInfoBoxViewModel> _boxes = [];
     private (PlotControl Plot, PlotContainerViewModel Container, HoverMark Mark)[] _hosted = [];
@@ -51,6 +51,7 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
                     if (e.PropertyName == nameof(SParameterViewerViewModel.FilePath)) Register(vm.FilePath);
                     if (e.PropertyName is nameof(SParameterViewerViewModel.ShowSmith)
                                       or nameof(SParameterViewerViewModel.ShowMagnitude)
+                                      or nameof(SParameterViewerViewModel.ShowPolar)
                                       or nameof(SParameterViewerViewModel.ShowPhase))
                         ApplyPlotRows();
                 };
@@ -199,6 +200,7 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
         _hosted =
         [
             (this.FindControl<PlotControl>("SmithPlotControl")!, vm.SmithContainer, new HoverMark()),
+            (this.FindControl<PlotControl>("PolarPlotControl")!, vm.PolarContainer, new HoverMark()),
             (this.FindControl<PlotControl>("MagnitudePlotControl")!, vm.MagnitudeContainer, new HoverMark()),
             (this.FindControl<PlotControl>("PhasePlotControl")!, vm.PhaseContainer, new HoverMark()),
         ];
@@ -268,6 +270,7 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
     private void PlaceLegends()
     {
         PlaceLegend(this.FindControl<PlotControl>("SmithPlotControl"), this.FindControl<ItemsControl>("SmithLegendList"));
+        PlaceLegend(this.FindControl<PlotControl>("PolarPlotControl"), this.FindControl<ItemsControl>("PolarLegendList"));
         PlaceLegend(this.FindControl<PlotControl>("MagnitudePlotControl"), this.FindControl<ItemsControl>("MagnitudeLegendList"));
         PlaceLegend(this.FindControl<PlotControl>("PhasePlotControl"), this.FindControl<ItemsControl>("PhaseLegendList"));
     }
@@ -311,9 +314,9 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
 
         var chart = PlotCanvasGeometry.ChartRect(model, plot.Bounds.Width, plot.Bounds.Height);
         double x = chart.Left + chart.Width + LegendGap;
-        // A Smith chart's names stay outside the disc. Pulling them back to fit the host is what
+        // A round chart's names stay outside the disc. Pulling them back to fit the host is what
         // laid them on the circle; the host is sized to leave the strip.
-        if (model.PlotType != PlotType.Smith)
+        if (model.PlotType is not (PlotType.Smith or PlotType.Polar))
             x = Math.Clamp(x, 0, Math.Max(0, plot.Bounds.Width - lw - 2));
         else
             x = Math.Max(0, x);
@@ -518,7 +521,7 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
             if (z.Length > 0) value += "\n" + z;
         }
         if (!double.IsFinite(hz)) return value;
-        return plot.PlotType == PlotType.Smith
+        return plot.PlotType is PlotType.Smith or PlotType.Polar
             ? SParameterViewerPreset.Hz(hz) + "\n" + value
             : value + "\n" + SParameterViewerPreset.Hz(hz);
     }
