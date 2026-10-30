@@ -84,10 +84,12 @@ public sealed class SParameterPlotLayout : Panel
 
         if (magnitude && phase)
         {
-            // Each rectangular plot spans the pane, one above the other, so neither is squeezed
-            // into half the width.
-            double row = Math.Max(0, (h - Gap) / 2);
-            return new Slots(none, new Rect(0, 0, w, row), new Rect(0, row + Gap, w, row));
+            // Each plot spans the pane, magnitude above phase. The stack starts below the toolbar
+            // rather than against it, so the empty band is not left entirely under the phase axis.
+            double top = Math.Clamp(h * 0.1, 36, 72);
+            double inner = Math.Max(0, h - top - Gap);
+            double row = inner / 2;
+            return new Slots(none, new Rect(0, top, w, row), new Rect(0, top + row + Gap, w, row));
         }
 
         if (smith)
