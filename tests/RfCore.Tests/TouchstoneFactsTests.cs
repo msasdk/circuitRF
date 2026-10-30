@@ -79,6 +79,13 @@ public class TouchstoneFactsTests
     }
 
     [Fact]
+    public void ASampleAtZeroHertzIsADcPoint_AndAnyOtherSweepIsNot()
+    {
+        Assert.True(TouchstoneFacts.Describe(TwoPort(0, 1e9, 2e9)).HasDcPoint);
+        Assert.False(TouchstoneFacts.Describe(TwoPort(1e9, 2e9)).HasDcPoint);
+    }
+
+    [Fact]
     public void OnePointHasNoSpacing()
     {
         var f = TouchstoneFacts.Describe(TwoPort(2e9));

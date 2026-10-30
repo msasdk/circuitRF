@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using CircuitRF.Diagnostics;
 using CircuitRF.Render.DataDisplay;
+using CircuitRF.Ui;
 using CircuitRF.Ui.DataDisplay.ViewModels;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -16,12 +17,8 @@ using SkiaSharp;
 
 namespace CircuitRF.Ui.SParameters;
 
-/// <summary>One line of the file pane: a label, what the file states, and text a hover popup shows.</summary>
-public sealed record SParameterFactRow(string Label, string Value, string? Detail = null)
-{
-    /// <summary>True when <see cref="Detail"/> is there to pop up — the comment lines.</summary>
-    public bool HasDetail => Detail is { Length: > 0 };
-}
+/// <summary>One line of the file pane: a label and what the file states.</summary>
+public sealed record SParameterFactRow(string Label, string Value);
 
 /// <summary>One trace name beside its plot: the colour it is drawn in, and the name the plot would have given it.</summary>
 public sealed record SParameterLegendEntry(string Label, SKColor Color);
@@ -151,9 +148,6 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
 
     [ObservableProperty] private string _status = "";
 
-    /// <summary>A dot at every point the file holds, so the step can be seen.</summary>
-    [ObservableProperty] private bool _showSamples;
-
     /// <summary>
     /// Which plots the toolbar has on. The window opens on the Smith chart and magnitude; polar and
     /// phase are a click away. Every one of them can be off, and then the pane is empty.
@@ -195,8 +189,6 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
     /// <summary>How many tick boxes a row of the term grid holds: one per port, up to six.</summary>
     [ObservableProperty] private int _termColumns = 2;
 
-    partial void OnShowSamplesChanged(bool value) => Redraw();
-
     // ── loading ───────────────────────────────────────────────────────────────
 
     /// <summary>Reads <paramref name="path"/> and draws it. The read runs off the UI thread.</summary>
@@ -234,9 +226,8 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
 
         ErrorText = null;
         var f = source.Facts;
-        string? comments = CommentText(source);
         foreach (var (label, value) in SParameterViewerPreset.FileFacts(f))
-            Facts.Add(new SParameterFactRow(label, value, label == "Comments" ? comments : null));
+            Facts.Add(new SParameterFactRow(label, value));
         foreach (var d in source.Findings) Findings.Add(d.Render());
 
         var chosen = (keep ?? SParameterViewerPreset.DefaultSelection(f.Ports)).ToHashSet();
@@ -250,13 +241,6 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
     }
 
     // ── the terms ─────────────────────────────────────────────────────────────
-
-    /// <summary>The file's comment lines, one per row, or null when it carries none.</summary>
-    public static string? CommentText(TouchstoneSource source)
-    {
-        var lines = source.AsRead.Comments.Select(c => c.Text).Where(t => t.Trim().Length > 0).ToList();
-        return lines.Count == 0 ? null : string.Join("\n", lines);
-    }
 
     /// <summary>The ticked terms, row-major.</summary>
     public IReadOnlyList<SParameterViewerPreset.Term> Selection() => [.. Terms.Where(t => t.IsChecked).Select(t => t.Term)];
@@ -291,7 +275,7 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
                 ? TraceProperties.ColorLUT[SParameterViewerPreset.ColorIndexOf(row.Term, selection)]
                 : SKColors.Transparent;
 
-        foreach (var composed in SParameterViewerPreset.Compose(_source, selection, ShowSamples))
+        foreach (var composed in SParameterViewerPreset.Compose(_source, selection))
             Refill(ContainerOf(composed.Kind), composed.Config, _source);
         FillLegend(SmithLegend, SmithPlot);
         FillLegend(PolarLegend, PolarPlot);
@@ -405,6 +389,22 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
         await LoadAsync(path);
     }
 
+    /// <summary>The file-manager wording for the path link.</summary>
+    public string RevealTip => FileReveal.Label;
+
+    /// <summary>Shows the open file in the system file manager.</summary>
+    [RelayCommand]
+    private void RevealFile()
+    {
+        if (FilePath is not { } path) return;
+        if (!File.Exists(path))
+        {
+            Status = "That file is no longer there.";
+            return;
+        }
+        FileReveal.Reveal(path, ex => Status = ex.Message);
+    }
+
     private bool CanReload() => FilePath is not null && !IsLoading;
 
     /// <summary>Reads the file again — after it was rewritten by a measurement or a run.</summary>
@@ -422,7 +422,7 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
     {
         if (_source is null || PickDisplayPathAsync is null) return;
         if (await PickDisplayPathAsync(Path.GetFileNameWithoutExtension(_source.Path) + ".cdd") is not { } target) return;
-        var config = SParameterViewerPreset.Build(_source, Selection(), ShowSamples);
+        var config = SParameterViewerPreset.Build(_source, Selection());
         try
         {
             await File.WriteAllTextAsync(target, JsonSerializer.Serialize(config, DataDisplayJson.Options),

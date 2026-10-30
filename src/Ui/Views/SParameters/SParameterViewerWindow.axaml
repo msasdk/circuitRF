@@ -100,8 +100,21 @@
         <Style Selector="ToggleButton.plotpick:checked ddc|PlotTypeGlyphControl">
             <Setter Property="Stroke" Value="White"/>
         </Style>
-        <Style Selector="SelectableTextBlock.comment">
-            <Setter Property="TextDecorations" Value="Underline"/>
+        <Style Selector="Button.pathlink">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.pathlink /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        </Style>
+        <Style Selector="Button.pathlink:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
         </Style>
     </Window.Styles>
 
@@ -151,7 +164,13 @@
                                 <StackPanel Spacing="2">
                                     <TextBlock FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap"
                                                Text="{Binding FileName, FallbackValue='', TargetNullValue='No file open'}"/>
-                                    <SelectableTextBlock Classes="note" Text="{Binding FilePath}" IsVisible="{Binding FilePath, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                                    <Button Classes="pathlink" Command="{Binding RevealFileCommand}"
+                                            IsVisible="{Binding FilePath, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                            ToolTip.Tip="{Binding RevealTip}">
+                                        <TextBlock FontSize="11" Text="{Binding FilePath}" TextWrapping="Wrap"
+                                                   TextDecorations="Underline"
+                                                   Foreground="{DynamicResource SystemAccentColor}"/>
+                                    </Button>
                                     <TextBlock Classes="note" IsVisible="{Binding IsEmpty}"
                                                Text="Open a file with the folder button, or from a Touchstone file in the Workspace, a placed SnP component or a Data Display's dataset list."/>
                                     <TextBlock Classes="note" IsVisible="{Binding IsLoading}" Text="Reading…"/>
@@ -164,26 +183,17 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- What the file states: label left, value right. -->
+                            <!-- File information: label left, value right. -->
                             <Border Classes="card" IsVisible="{Binding HasFile}" Tag="facts-card">
                                 <StackPanel>
-                                    <TextBlock Classes="cardhdr" Text="What the file states"/>
+                                    <TextBlock Classes="cardhdr" Text="File information"/>
                                     <ItemsControl ItemsSource="{Binding Facts}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="vm:SParameterFactRow">
                                                 <Grid ColumnDefinitions="Auto,*" Margin="0,1">
                                                     <TextBlock Classes="lbl" Text="{Binding Label}" Margin="0,0,10,0"/>
                                                     <SelectableTextBlock Grid.Column="1" FontSize="12" TextAlignment="Right" TextWrapping="Wrap"
-                                                                         HorizontalAlignment="Right" VerticalAlignment="Center" Text="{Binding Value}"
-                                                                         IsVisible="{Binding !HasDetail}"/>
-                                                    <!-- The count is the hover target: the popup is the comment text. -->
-                                                    <SelectableTextBlock Grid.Column="1" FontSize="12" TextAlignment="Right" TextWrapping="Wrap"
-                                                                         HorizontalAlignment="Right" VerticalAlignment="Center" Text="{Binding Value}"
-                                                                         Classes="comment" IsVisible="{Binding HasDetail}">
-                                                        <ToolTip.Tip>
-                                                            <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" MaxWidth="420" FontSize="12"/>
-                                                        </ToolTip.Tip>
-                                                    </SelectableTextBlock>
+                                                                         HorizontalAlignment="Right" VerticalAlignment="Center" Text="{Binding Value}"/>
                                                 </Grid>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
@@ -240,8 +250,6 @@
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
-                                    <CheckBox Content="Show samples" IsChecked="{Binding ShowSamples}" Margin="0,4,0,0"
-                                              ToolTip.Tip="A dot at every frequency the file holds, so its step can be seen. The lines join the file's own points and nothing is interpolated between them."/>
                                 </StackPanel>
                             </Border>
                         </StackPanel>

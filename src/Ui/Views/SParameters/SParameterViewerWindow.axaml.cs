@@ -543,18 +543,22 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
             ? trace.Data.Frequencies[index]
             : plot.PlotType.IsRect() ? trace.Points[index].X / plot.FreqUnits.Scale() : double.NaN;
         var marker = new Marker(trace, double.IsFinite(hz) ? hz : 0, false, false, 0);
-        string value = trace.GetMarkerValString(marker, false);
-        // A reflection on the Smith chart is also an impedance at the file's reference. The frequency
-        // leads, as it does on the rectangular plots.
-        if (plot.PlotType == PlotType.Smith && trace.MarkerShowsImpedance(marker))
+        if (plot.PlotType == PlotType.Smith)
         {
-            string z = trace.GetMarkerImpedanceString(marker);
-            if (z.StartsWith("impedance", StringComparison.Ordinal))
-                z = "Impedance" + z["impedance".Length..];
-            if (z.Length > 0) value += "\n" + z;
+            string? z = null;
+            if (trace.MarkerShowsImpedance(marker))
+            {
+                z = trace.GetMarkerImpedanceString(marker);
+                if (z.StartsWith("impedance", StringComparison.Ordinal))
+                    z = "Impedance" + z["impedance".Length..];
+                if (z.Length == 0) z = null;
+            }
+            string term = $"{trace.MatrixType}({trace.Row + 1},{trace.Col + 1})";
+            return SParameterViewerPreset.SmithHover(term, hz, trace.GetMarkerDataPoint(marker), z);
         }
+        string value = trace.GetMarkerValString(marker, false);
         if (!double.IsFinite(hz)) return value;
-        return plot.PlotType is PlotType.Smith or PlotType.Polar
+        return plot.PlotType == PlotType.Polar
             ? SParameterViewerPreset.Hz(hz) + "\n" + value
             : value + "\n" + SParameterViewerPreset.Hz(hz);
     }

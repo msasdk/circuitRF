@@ -55,6 +55,7 @@ namespace RfCore.Data
     /// <param name="Z0PerPort">Per-port references when the file states them, else null.</param>
     /// <param name="NoisePoints">Rows of a two-port noise block; 0 when there is none.</param>
     /// <param name="CommentLines">Comment lines the reader kept.</param>
+    /// <param name="HasDcPoint">True when a frequency sample is at 0 Hz.</param>
     public sealed record TouchstoneFacts(
         int           Ports,
         int?          ExtensionPorts,
@@ -73,7 +74,8 @@ namespace RfCore.Data
         Complex       Z0,
         Complex[]?    Z0PerPort,
         int           NoisePoints,
-        int           CommentLines)
+        int           CommentLines,
+        bool          HasDcPoint)
     {
         /// <summary>
         /// Relative tolerance on a step (or a ratio) before a grid stops being called uniform (or
@@ -129,6 +131,9 @@ namespace RfCore.Data
 
             var (grid, stepHz, perDecade) = Classify(f, firstBad);
 
+            bool dc = false;
+            for (int i = 0; i < n && !dc; i++) dc = Math.Abs(f[i]) <= 1e-9;
+
             return new TouchstoneFacts(
                 snp.Ports,
                 path is null ? null : TouchstoneIO.ParsePortsFromExtension(path),
@@ -144,7 +149,8 @@ namespace RfCore.Data
                 snp.Z0,
                 snp.Z0PerPort,
                 snp.NoiseParameters.Count,
-                snp.Comments.Count);
+                snp.Comments.Count,
+                dc);
         }
 
         private static (FrequencyGrid Grid, double StepHz, double PerDecade) Classify(double[] f, int firstBad)

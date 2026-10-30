@@ -43,7 +43,7 @@
 <h2>On this page</h2>
 <ol>
 <li><a href="#opening">Opening the viewer</a></li>
-<li><a href="#file">What the file states</a></li>
+<li><a href="#file">File information</a></li>
 <li><a href="#plots">The four plots</a></li>
 <li><a href="#plots-shown">Choosing the plots</a></li>
 <li><a href="#terms">Choosing which terms to draw</a></li>
@@ -66,8 +66,9 @@ loose <code>.sNp</code> sitting in the workspace folder.</p>
 and <strong>SnP</strong> are all this one component — enables <strong>Show</strong>, beside <strong>Browse…</strong>, once its
 file is chosen and is there. <strong>Show</strong> opens the viewer on that file.</p>
 <p>A Data Display's dataset list offers the same <strong>View</strong> on any row whose file is a Touchstone file.</p>
-<h2 id="file">What the file states</h2>
-<p>The left pane reads the file back to you, which is most of the point of opening it:</p>
+<h2 id="file">File information</h2>
+<p>The left pane reads the file back to you, which is most of the point of opening it. The path under
+the file name opens that file in the system file manager.</p>
 <table>
 <thead>
 <tr>
@@ -93,6 +94,10 @@ file is chosen and is there. <strong>Show</strong> opens the viewer on that file
 <td>How many frequencies, and the first and the last.</td>
 </tr>
 <tr>
+<td><strong>DC point</strong></td>
+<td>Yes when a sample is at 0 Hz. Otherwise No, with a warning.</td>
+</tr>
+<tr>
 <td><strong>Spacing</strong></td>
 <td>Uniform, with its step; logarithmic, with its points per decade; or irregular, with its smallest and largest step.</td>
 </tr>
@@ -104,11 +109,14 @@ file is chosen and is there. <strong>Show</strong> opens the viewer on that file
 <td><strong>Noise data</strong></td>
 <td>How many noise rows a two-port carries, or none.</td>
 </tr>
+<tr>
+<td><strong>Comments</strong></td>
+<td>How many comment lines the file carries, when it has any.</td>
+</tr>
 </tbody>
 </table>
 <p>The plots follow the file. Nothing is resampled and nothing is interpolated: each curve joins the
-file's own points, and <strong>Show samples</strong> puts a dot on every one of them so the step can be seen.</p>
-<p><strong>Comments</strong> reads as a count. Hover it and the lines themselves pop up.</p>
+file's own points.</p>
 <h2 id="plots-shown">Choosing the plots</h2>
 <p>Four buttons sit above the plots: the Smith chart, the polar chart, magnitude and phase. The window
 opens with the Smith chart and magnitude on, and polar and phase off. Each button turns its plot on
@@ -152,8 +160,9 @@ phase axis is fixed at ±180°, which is the whole of what a wrapped phase can b
 an axis of 1E+09 to 5E+09 says the same thing badly.</p>
 <p>Hover the magnitude or phase plot and a vertical line crosses every trace at that frequency, with
 each value in the box beside the pointer. On the Smith chart and the polar chart the marker sits on
-the nearest sample. A Smith reflection also states the impedance it stands for at the file's reference,
-under the S-parameter, with the frequency first.
+the nearest sample. A Smith reflection reads <code>S(1,1) @ 2.4 GHz</code>, then Γ as a real and imaginary pair
+and as a magnitude and angle — <code>Γ = 0.5+j0.1 (0.51 ∠ 11.31°)</code> — then the impedance at the file's
+reference, ending in Ω.
 A double-click still drops a marker you can drag and keep, and
 <strong>Delete</strong> removes the selected ones. Arrow keys step a kept marker one sample at a time.</p>
 <p>A file of Y- or Z-parameters is drawn as S-parameters at the file's own reference, because a Smith
@@ -215,7 +224,7 @@ The terms you had ticked stay ticked.</p>
 <p><a href="cli.html#snp"><code>circuitrf snp</code></a> prints this pane's lines, and <code>-o</code> draws the four plots or writes the
 same Data Display the button does.</p>
 <pre><code class="cmd"><span class="prompt">$ </span>circuitrf snp amp.s2p
-<span class="prompt">$ </span>circuitrf snp coupler.s4p --params reflections,S21 --samples -o coupler.svg</code></pre>
+<span class="prompt">$ </span>circuitrf snp coupler.s4p --params reflections,S21 -o coupler.svg</code></pre>
 <h2 id="limits">What it will not do</h2>
 <p>It does not check passivity, reciprocity or causality.</p>
 <p>It reads the Touchstone files the rest of circuitRF reads. A Touchstone 2 file written with keyword

@@ -61,7 +61,12 @@ The frequency axis is pinned to exactly the file's lowest and highest point, in 
 that span reads in — a file whose option line says Hz over a 1 to 5 GHz sweep still reads in GHz,
 because the option line's unit is what the file was *written* in and the axis is what it *spans*. A
 log-spaced file gets a log axis. Every trace is a network trace, so it draws the file's own samples
-and nothing between them; **Show samples** puts a dot on each one.
+and nothing between them.
+
+The left pane is titled **File information**. It says whether a sample sits at 0 Hz — Yes, or No with
+a warning — and, when the file has any, how many comment lines it carries. The path under the file
+name opens that file in the system file manager. A Smith hover names the term at that frequency, then
+Γ in rectangular form and as a magnitude and angle, then the impedance line, ending in Ω.
 
 A grid is called uniform or logarithmic within a part in 10³ of its step, with a floor at the
 precision a frequency is printed to. `TouchstoneHealth`'s own tolerance is 10⁻⁶ and answers a

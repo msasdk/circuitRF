@@ -66,7 +66,7 @@ public sealed class SParameterViewerTests : IDisposable
     public void TheSmithChartCarriesTheReflections_TheRectangularPlotsEveryTerm()
     {
         var source = Read(Write(2, Uniform(1e9, 0.1e9, 41)));
-        var plots = SParameterViewerPreset.Compose(source, SParameterViewerPreset.DefaultSelection(2), showSamples: false);
+        var plots = SParameterViewerPreset.Compose(source, SParameterViewerPreset.DefaultSelection(2));
 
         Assert.Equal([SParameterViewerPreset.PlotKind.Smith, SParameterViewerPreset.PlotKind.Polar,
                       SParameterViewerPreset.PlotKind.Magnitude, SParameterViewerPreset.PlotKind.Phase],
@@ -92,7 +92,7 @@ public sealed class SParameterViewerTests : IDisposable
     public void TheFrequencyAxisIsPinnedToTheFilesOwnRange()
     {
         var source = Read(Write(2, Uniform(1.23e9, 0.01e9, 101)));
-        var plots = SParameterViewerPreset.Compose(source, SParameterViewerPreset.DefaultSelection(2), false);
+        var plots = SParameterViewerPreset.Compose(source, SParameterViewerPreset.DefaultSelection(2));
         foreach (var rect in plots.Where(p => p.Config.PlotType == PlotType.Rect).Select(p => p.Config))
         {
             Assert.Equal(FreqUnit.GHz, rect.FreqUnit);
@@ -120,25 +120,17 @@ public sealed class SParameterViewerTests : IDisposable
     {
         var source = Read(Write(1, [.. Enumerable.Range(0, 31).Select(i => 1e3 * Math.Pow(10, i / 10.0))]));
         Assert.Equal(FrequencyGrid.Logarithmic, source.Facts.Grid);
-        var rect = SParameterViewerPreset.Compose(source, SParameterViewerPreset.DefaultSelection(1), false)
+        var rect = SParameterViewerPreset.Compose(source, SParameterViewerPreset.DefaultSelection(1))
             .Single(p => p.Kind == SParameterViewerPreset.PlotKind.Magnitude).Config;
         Assert.Equal(AxisScale.Log, rect.Axes!.XScale);
         Assert.Equal(FreqUnit.MHz, rect.FreqUnit);
     }
 
     [Fact]
-    public void ShowSamplesPutsAMarkerOnEveryTrace()
-    {
-        var source = Read(Write(2, Uniform(1e9, 0.1e9, 11)));
-        var plots = SParameterViewerPreset.Compose(source, SParameterViewerPreset.DefaultSelection(2), showSamples: true);
-        Assert.All(plots.SelectMany(p => p.Config.Traces), t => Assert.True(t.Properties.MarkerEnabled));
-    }
-
-    [Fact]
     public void OneTermHasOneColourOnAllThreePlots()
     {
         var source = Read(Write(2, Uniform(1e9, 0.1e9, 11)));
-        var plots = SParameterViewerPreset.Compose(source, SParameterViewerPreset.DefaultSelection(2), false);
+        var plots = SParameterViewerPreset.Compose(source, SParameterViewerPreset.DefaultSelection(2));
         int s22 = plots[0].Config.Traces.Single(t => t.Row == 1 && t.Col == 1).Properties.LineColorIndex;
         Assert.Equal(s22, plots[2].Config.Traces.Single(t => t.Row == 1 && t.Col == 1).Properties.LineColorIndex);
         Assert.Equal(s22, plots[3].Config.Traces.Single(t => t.Row == 1 && t.Col == 1).Properties.LineColorIndex);
@@ -188,6 +180,28 @@ public sealed class SParameterViewerTests : IDisposable
         Assert.Equal("5 GHz", rows["Stop"]);
         Assert.Equal("uniform, step 100 MHz", rows["Spacing"]);
         Assert.Equal("50 Ω", rows["Reference"]);
+        Assert.Equal("No ⚠", rows["DC point"]);
+    }
+
+    [Fact]
+    public void ASampleAtZeroHertzIsADcPoint()
+    {
+        var source = Read(Write(1, [0, 1e9, 2e9], "fromdc.s1p"));
+        Assert.True(source.Facts.HasDcPoint);
+        Assert.Equal("Yes", SParameterViewerPreset.FileFacts(source.Facts).Single(r => r.Label == "DC point").Value);
+    }
+
+    [Fact]
+    public void ASmithHoverNamesTheTermThenGammaThenTheImpedance()
+    {
+        Assert.Equal("Γ = 21+j30 (36.62 ∠ 55.01°)", SParameterViewerPreset.Gamma(new Complex(21, 30)));
+        Assert.Equal("Γ = 21-j30 (36.62 ∠ -55.01°)", SParameterViewerPreset.Gamma(new Complex(21, -30)));
+        Assert.Equal(
+            "S(1,1) @ 2.4 GHz\nΓ = 0.5+j0.1 (0.51 ∠ 11.31°)\nImpedance=Z0*(1+j0) Ω",
+            SParameterViewerPreset.SmithHover("S(1,1)", 2.4e9, new Complex(0.5, 0.1), "Impedance=Z0*(1+j0)"));
+        Assert.Equal(
+            "S(2,2) @ 1 GHz\nΓ = 0+j0 (0.00 ∠ 0°)\nImpedance=50 Ω",
+            SParameterViewerPreset.SmithHover("S(2,2)", 1e9, Complex.Zero, "Impedance=50 Ω"));
     }
 
     // ── the source ───────────────────────────────────────────────────────────
@@ -323,7 +337,6 @@ public sealed class SParameterViewerTests : IDisposable
         File.WriteAllText(path, "! measured on the bench\n! fixture subtracted\n# GHz S RI R 50\n1 0.1 0.2\n2 0.1 0.3\n");
         var source = Read(path);
         Assert.Equal("2 lines", SParameterViewerPreset.FileFacts(source.Facts).Single(r => r.Label == "Comments").Value);
-        Assert.Equal("measured on the bench\nfixture subtracted", SParameterViewerViewModel.CommentText(source));
     }
 
     [Fact]
@@ -381,7 +394,7 @@ public sealed class SParameterViewerTests : IDisposable
         var marker = new Marker(s21, 2e9, false, false, 1);
         s21.Markers.Add(marker);
 
-        vm.ShowSamples = true;
+        vm.Redraw();
 
         var after = vm.MagnitudePlot.Traces.Single(t => t.Row == 1 && t.Col == 0);
         Assert.NotSame(s21, after);

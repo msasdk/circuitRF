@@ -182,6 +182,7 @@ public static class SParameterViewerPreset
             ("Points", f.FrequencyCount.ToString(inv)),
             ("Start", Hz(f.FirstFrequencyHz)),
             ("Stop", Hz(f.LastFrequencyHz)),
+            ("DC point", f.HasDcPoint ? "Yes" : "No ⚠"),
             ("Spacing", Spacing(f)),
             ("Reference", Reference(f)),
             ("Noise data", f.NoisePoints > 0 ? $"{f.NoisePoints} point(s)" : "none"),
@@ -221,6 +222,32 @@ public static class SParameterViewerPreset
             ? string.Join(", ", perPort.Select((z, i) => $"{i + 1}: {Ohms(z)}"))
             : Ohms(f.Z0);
 
+    /// <summary>
+    /// Γ at one Smith-chart sample: rectangular, then magnitude and angle.
+    /// <c>Γ = 21+j30 (36.62 ∠ 55.01°)</c>.
+    /// </summary>
+    public static string Gamma(System.Numerics.Complex g)
+    {
+        var inv = CultureInfo.InvariantCulture;
+        if (!double.IsFinite(g.Real) || !double.IsFinite(g.Imaginary)) return "Γ = —";
+        string sign = g.Imaginary < 0 ? "-" : "+";
+        double deg = g.Phase * 180.0 / Math.PI;
+        return $"Γ = {g.Real.ToString("0.####", inv)}{sign}j{Math.Abs(g.Imaginary).ToString("0.####", inv)} " +
+               $"({g.Magnitude.ToString("0.00", inv)} ∠ {deg.ToString("0.##", inv)}°)";
+    }
+
+    /// <summary>
+    /// The Smith hover: the term at its frequency, <see cref="Gamma"/>, then the impedance line the
+    /// marker already states. That line keeps its spelling and ends in Ω.
+    /// </summary>
+    public static string SmithHover(string term, double hz, System.Numerics.Complex gamma, string? impedance)
+    {
+        string head = double.IsFinite(hz) ? $"{term} @ {Hz(hz)}" : term;
+        if (string.IsNullOrEmpty(impedance)) return head + "\n" + Gamma(gamma);
+        string z = impedance.EndsWith("Ω", StringComparison.Ordinal) ? impedance : impedance + " Ω";
+        return head + "\n" + Gamma(gamma) + "\n" + z;
+    }
+
     private static string Ohms(System.Numerics.Complex z) =>
         Math.Abs(z.Imaginary) < 1e-12
             ? $"{z.Real.ToString("0.###", CultureInfo.InvariantCulture)} Ω"
@@ -247,9 +274,7 @@ public static class SParameterViewerPreset
     /// The four plots over <paramref name="source"/>, every trace bound to its path. The Smith
     /// chart and the polar chart are on the left; magnitude and phase stack beside them.
     /// </summary>
-    /// <param name="showSamples">Draw a dot at every point the file holds.</param>
-    public static IReadOnlyList<ComposedPlot> Compose(TouchstoneSource source, IReadOnlyList<Term> selection,
-                                                      bool showSamples)
+    public static IReadOnlyList<ComposedPlot> Compose(TouchstoneSource source, IReadOnlyList<Term> selection)
     {
         var unit  = DisplayUnit(source.Facts);
         string sourceRef = source.Path;
@@ -261,7 +286,7 @@ public static class SParameterViewerPreset
             CustomTitle = "Reflection", CustomTitleOn = true,
             Legend = LegendPlacement.Inside,
             Traces = [.. selection.Where(t => t.IsReflection)
-                                  .Select(t => Network(t, ColorIndexOf(t, selection), sourceRef, DependentVarFormat.Complex, showSamples))],
+                                  .Select(t => Network(t, ColorIndexOf(t, selection), sourceRef, DependentVarFormat.Complex))],
         };
 
         var polar = new PlotContainerConfig
@@ -271,15 +296,15 @@ public static class SParameterViewerPreset
             CustomTitle = "Transmission", CustomTitleOn = true,
             Legend = LegendPlacement.Inside,
             Traces = [.. selection.Where(t => !t.IsReflection)
-                                  .Select(t => Network(t, ColorIndexOf(t, selection), sourceRef, DependentVarFormat.Complex, showSamples))],
+                                  .Select(t => Network(t, ColorIndexOf(t, selection), sourceRef, DependentVarFormat.Complex))],
         };
 
         var magnitude = Rect("Magnitude", "Magnitude (dB)", unit, Gap + SmithSize + Gap, Gap,
-            [.. selection.Select(t => Network(t, ColorIndexOf(t, selection), sourceRef, DependentVarFormat.Db, showSamples))],
+            [.. selection.Select(t => Network(t, ColorIndexOf(t, selection), sourceRef, DependentVarFormat.Db))],
             FrequencyAxis(source, unit, phase: false));
 
         var phase = Rect("Phase", "Phase (deg)", unit, Gap + SmithSize + Gap, Gap + RectHeight + Gap,
-            [.. selection.Select(t => Network(t, ColorIndexOf(t, selection), sourceRef, DependentVarFormat.Phase, showSamples))],
+            [.. selection.Select(t => Network(t, ColorIndexOf(t, selection), sourceRef, DependentVarFormat.Phase))],
             FrequencyAxis(source, unit, phase: true));
 
         return
@@ -292,11 +317,11 @@ public static class SParameterViewerPreset
     }
 
     /// <summary>The plots as a Data Display document: one tab, its source the file itself.</summary>
-    public static DataDisplayConfig Build(TouchstoneSource source, IReadOnlyList<Term> selection, bool showSamples) => new()
+    public static DataDisplayConfig Build(TouchstoneSource source, IReadOnlyList<Term> selection) => new()
     {
         FormatVersion      = DataDisplayConfig.CurrentFormatVersion,
         SelectedDataSource = source.Path,
-        Tabs = [new TabConfig { Name = TabName, Plots = [.. Compose(source, selection, showSamples).Select(p => p.Config)] }],
+        Tabs = [new TabConfig { Name = TabName, Plots = [.. Compose(source, selection).Select(p => p.Config)] }],
     };
 
     /// <summary>
@@ -336,25 +361,15 @@ public static class SParameterViewerPreset
     };
 
     /// <summary>One network trace, in palette slot <paramref name="c"/>.</summary>
-    private static TraceConfig Network(Term t, int c, string sourceRef, DependentVarFormat y, bool showSamples)
+    private static TraceConfig Network(Term t, int c, string sourceRef, DependentVarFormat y) => new()
     {
-        return new TraceConfig
-        {
-            SourcePath = sourceRef,
-            MatrixType = MatrixType.S,
-            Row        = t.Row,
-            Col        = t.Col,
-            YAxis      = y,
-            Properties = new TracePropertiesConfig
-            {
-                LineColorIndex   = c,
-                MarkerColorIndex = c,
-                MarkerEnabled    = showSamples,
-                MarkerType       = MarkerType.Circle,
-                MarkerSize       = 1.5,
-            },
-        };
-    }
+        SourcePath = sourceRef,
+        MatrixType = MatrixType.S,
+        Row        = t.Row,
+        Col        = t.Col,
+        YAxis      = y,
+        Properties = new TracePropertiesConfig { LineColorIndex = c, MarkerColorIndex = c },
+    };
 
     /// <summary>
     /// The palette slot a term is drawn in: its place in the selection, so the terms on show take the

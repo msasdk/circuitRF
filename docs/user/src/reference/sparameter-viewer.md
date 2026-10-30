@@ -11,7 +11,7 @@ keywords: S-Parameter Viewer, Touchstone, s2p, sNp, SNP, SnP, S-parameters, Smit
 <h2>On this page</h2>
 <ol>
 <li><a href="#opening">Opening the viewer</a></li>
-<li><a href="#file">What the file states</a></li>
+<li><a href="#file">File information</a></li>
 <li><a href="#plots">The four plots</a></li>
 <li><a href="#plots-shown">Choosing the plots</a></li>
 <li><a href="#terms">Choosing which terms to draw</a></li>
@@ -40,9 +40,10 @@ file is chosen and is there. **Show** opens the viewer on that file.
 
 A Data Display's dataset list offers the same **View** on any row whose file is a Touchstone file.
 
-## What the file states {#file}
+## File information {#file}
 
-The left pane reads the file back to you, which is most of the point of opening it:
+The left pane reads the file back to you, which is most of the point of opening it. The path under
+the file name opens that file in the system file manager.
 
 | | |
 |---|---|
@@ -50,14 +51,14 @@ The left pane reads the file back to you, which is most of the point of opening 
 | **Parameters** | S, Y or Z, and how the numbers are written: real and imaginary, magnitude and angle, or dB and angle. |
 | **Unit** | The frequency unit on the file's option line. |
 | **Points, Start, Stop** | How many frequencies, and the first and the last. |
+| **DC point** | Yes when a sample is at 0 Hz. Otherwise No, with a warning. |
 | **Spacing** | Uniform, with its step; logarithmic, with its points per decade; or irregular, with its smallest and largest step. |
 | **Reference** | The reference impedance, per port when the ports differ. |
 | **Noise data** | How many noise rows a two-port carries, or none. |
+| **Comments** | How many comment lines the file carries, when it has any. |
 
 The plots follow the file. Nothing is resampled and nothing is interpolated: each curve joins the
-file's own points, and **Show samples** puts a dot on every one of them so the step can be seen.
-
-**Comments** reads as a count. Hover it and the lines themselves pop up.
+file's own points.
 
 ## Choosing the plots {#plots-shown}
 
@@ -92,8 +93,9 @@ an axis of 1E+09 to 5E+09 says the same thing badly.
 
 Hover the magnitude or phase plot and a vertical line crosses every trace at that frequency, with
 each value in the box beside the pointer. On the Smith chart and the polar chart the marker sits on
-the nearest sample. A Smith reflection also states the impedance it stands for at the file's reference,
-under the S-parameter, with the frequency first.
+the nearest sample. A Smith reflection reads `S(1,1) @ 2.4 GHz`, then Γ as a real and imaginary pair
+and as a magnitude and angle — `Γ = 0.5+j0.1 (0.51 ∠ 11.31°)` — then the impedance at the file's
+reference, ending in Ω.
 A double-click still drops a marker you can drag and keep, and
 **Delete** removes the selected ones. Arrow keys step a kept marker one sample at a time.
 
@@ -149,7 +151,7 @@ The terms you had ticked stay ticked.
 same Data Display the button does.
 
 <pre><code class="cmd"><span class="prompt">$ </span>circuitrf snp amp.s2p
-<span class="prompt">$ </span>circuitrf snp coupler.s4p --params reflections,S21 --samples -o coupler.svg</code></pre>
+<span class="prompt">$ </span>circuitrf snp coupler.s4p --params reflections,S21 -o coupler.svg</code></pre>
 
 ## What it will not do {#limits}
 

@@ -70,6 +70,7 @@ public sealed class SnpCliVerbTests : IDisposable
         var snp = JsonDocument.Parse(stdout).RootElement.GetProperty("result").GetProperty("snp");
         Assert.Equal(4, snp.GetProperty("ports").GetInt32());
         Assert.Equal(11, snp.GetProperty("points").GetInt32());
+        Assert.False(snp.GetProperty("hasDcPoint").GetBoolean());
         Assert.Equal("uniform", snp.GetProperty("grid").GetString());
         Assert.Equal(1e8, snp.GetProperty("stepHz").GetDouble(), 1e-3);
         Assert.Equal(["S11", "S21", "S22", "S33", "S44"],
@@ -116,11 +117,11 @@ public sealed class SnpCliVerbTests : IDisposable
     {
         string path = Write(2, 21);
         string cdd = Path.Combine(_dir, "out.cdd");
-        Assert.Equal(0, InProcessCli("snp", path, "--samples", "-o", cdd));
+        Assert.Equal(0, InProcessCli("snp", path, "-o", cdd));
 
         var source = TouchstoneSource.Read(path, out _)!;
         string expected = JsonSerializer.Serialize(
-            SParameterViewerPreset.Build(source, SParameterViewerPreset.DefaultSelection(2), showSamples: true),
+            SParameterViewerPreset.Build(source, SParameterViewerPreset.DefaultSelection(2)),
             DataDisplayJson.Options);
         Assert.Equal(expected, File.ReadAllText(cdd));
     }

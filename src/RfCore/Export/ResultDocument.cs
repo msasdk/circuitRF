@@ -847,6 +847,7 @@ namespace RfCore.Export
     /// when they never do.</param>
     /// <param name="Z0">The declared reference as <c>[re, im]</c> ohms.</param>
     /// <param name="Z0PerPort">Per-port references when the file states them.</param>
+    /// <param name="HasDcPoint">True when a frequency sample is at 0 Hz.</param>
     /// <param name="Plotted">The terms drawn, as named on the plots (<c>S21</c>, or <c>S(10,1)</c> from ten ports).</param>
     public sealed record SnpReportJson(
         string                   File,
@@ -874,6 +875,7 @@ namespace RfCore.Export
         [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         IReadOnlyList<double[]>? Z0PerPort,
         int                      NoisePoints,
+        bool                     HasDcPoint,
         IReadOnlyList<string>    Plotted);
 
     // ── `opt` / MCP `run analysis=optimize`: what the optimizer found (brief-tuneopt-11 R-to11-2) ──

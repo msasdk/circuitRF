@@ -2196,11 +2196,11 @@ anything else is a change to the <strong>document</strong>, which you make by wr
 must not take the work down with it, so the chart still draws everything that did resolve and the
 warning names what did not.</p>
 <h2 id="snp"><code>snp</code> — a Touchstone file, at a glance</h2>
-<pre><code class="cmd"><span class="prompt">$ </span>circuitrf snp &lt;file.sNp&gt; [--params S11,S21|all|reflections|default] [--samples]
+<pre><code class="cmd"><span class="prompt">$ </span>circuitrf snp &lt;file.sNp&gt; [--params S11,S21|all|reflections|default]
                      [-o out.{svg,pdf,png,cdd}]</code></pre>
 <p><code>snp</code> is the <a href="sparameter-viewer.html">S-Parameter Viewer</a> with no window. It prints what the file
-states — ports, the option line, the frequency range and how it is spaced, the reference impedance,
-whether it carries noise data — and names the terms it would plot.</p>
+states — ports, the option line, the frequency range and how it is spaced, whether a sample is at
+0 Hz, the reference impedance, whether it carries noise data — and names the terms it would plot.</p>
 <pre><code class="cmd"><span class="prompt">$ </span>circuitrf snp amp.s2p
 amp.s2p
   Ports         2
@@ -2209,6 +2209,7 @@ amp.s2p
   Points        41
   Start         1 GHz
   Stop          5 GHz
+  DC point      No ⚠
   Spacing       uniform, step 100 MHz
   Reference     50 Ω
   Noise data    none
@@ -2219,7 +2220,6 @@ amp.s2p
 <code>S101</code> would be ambiguous. <code>all</code>, <code>reflections</code> and <code>default</code> are words. The default is every term up
 to four ports, and above that the reflections plus each forward neighbour — the viewer's own opening
 selection. A term the file does not have is a refusal naming the file's port count.</p>
-<p><code>--samples</code> puts a dot on every point the file holds.</p>
 <h3 id="snp-output">What it writes</h3>
 <table>
 <thead>

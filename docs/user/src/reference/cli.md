@@ -1473,12 +1473,12 @@ warning names what did not.
 
 ## `snp` — a Touchstone file, at a glance {#snp}
 
-<pre><code class="cmd"><span class="prompt">$ </span>circuitrf snp &lt;file.sNp&gt; [--params S11,S21|all|reflections|default] [--samples]
+<pre><code class="cmd"><span class="prompt">$ </span>circuitrf snp &lt;file.sNp&gt; [--params S11,S21|all|reflections|default]
                      [-o out.{svg,pdf,png,cdd}]</code></pre>
 
 `snp` is the [S-Parameter Viewer](sparameter-viewer.html) with no window. It prints what the file
-states — ports, the option line, the frequency range and how it is spaced, the reference impedance,
-whether it carries noise data — and names the terms it would plot.
+states — ports, the option line, the frequency range and how it is spaced, whether a sample is at
+0 Hz, the reference impedance, whether it carries noise data — and names the terms it would plot.
 
 <pre><code class="cmd"><span class="prompt">$ </span>circuitrf snp amp.s2p
 amp.s2p
@@ -1488,6 +1488,7 @@ amp.s2p
   Points        41
   Start         1 GHz
   Stop          5 GHz
+  DC point      No ⚠
   Spacing       uniform, step 100 MHz
   Reference     50 Ω
   Noise data    none
@@ -1501,8 +1502,6 @@ Those lines are the viewer's own, so a terminal and the window cannot spell one 
 `S101` would be ambiguous. `all`, `reflections` and `default` are words. The default is every term up
 to four ports, and above that the reflections plus each forward neighbour — the viewer's own opening
 selection. A term the file does not have is a refusal naming the file's port count.
-
-`--samples` puts a dot on every point the file holds.
 
 ### What it writes {#snp-output}
 

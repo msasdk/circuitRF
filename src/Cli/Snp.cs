@@ -30,7 +30,6 @@ internal static class Snp
         public string? Path;
         public string? Output;
         public string? Params;
-        public bool    Samples;
 
         // `plot`'s picture options, spelling for spelling, as `smith` takes them.
         public int?    Width, Height;
@@ -70,7 +69,7 @@ internal static class Snp
     private static int Usage()
     {
         Console.Error.WriteLine(
-            "Usage: circuitrf snp <file.sNp> [--params S11,S21,…|all|reflections|default] [--samples]\n" +
+            "Usage: circuitrf snp <file.sNp> [--params S11,S21,…|all|reflections|default]\n" +
             "                     [-o out.{svg,pdf,png,cdd}] [--size WxH] [--scale N | --dpi N]\n" +
             "                     [--background opaque|transparent] [--dark]");
         return 1;
@@ -85,7 +84,6 @@ internal static class Snp
             {
                 case "-o" or "--output" when i + 1 < args.Length: o.Output = args[++i]; continue;
                 case "--params" when i + 1 < args.Length:         o.Params = args[++i]; continue;
-                case "--samples":                                 o.Samples = true;     continue;
                 case "--dark":                                    o.Dark = true;        continue;
 
                 case "--size" when i + 1 < args.Length:
@@ -232,6 +230,7 @@ internal static class Snp
             [f.Z0.Real, f.Z0.Imaginary],
             f.Z0PerPort?.Select(z => new[] { z.Real, z.Imaginary }).ToList(),
             f.NoisePoints,
+            f.HasDcPoint,
             [.. selection.Select(t => SParameterViewerPreset.Name(t, f.Ports))]);
     }
 
@@ -239,7 +238,7 @@ internal static class Snp
 
     private static int WriteDisplay(Options o, TouchstoneSource source, IReadOnlyList<SParameterViewerPreset.Term> selection)
     {
-        var config = SParameterViewerPreset.Build(source, selection, o.Samples);
+        var config = SParameterViewerPreset.Build(source, selection);
         try
         {
             string full = System.IO.Path.GetFullPath(o.Output!);
@@ -266,7 +265,7 @@ internal static class Snp
     {
         var placed = new List<PlacedPlot>();
         int traces = 0;
-        foreach (var composed in SParameterViewerPreset.Compose(source, selection, o.Samples))
+        foreach (var composed in SParameterViewerPreset.Compose(source, selection))
         {
             var pc   = composed.Config;
             var plot = PlotConfigLoader.LoadPlot(pc, source);
