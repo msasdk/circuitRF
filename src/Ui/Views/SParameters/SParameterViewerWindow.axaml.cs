@@ -384,6 +384,24 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
         var pos = e.GetPosition(plot);
         var tf = PlotRenderer.BuildTransforms(plot.Plot, (plot.Bounds.Width, plot.Bounds.Height));
 
+        foreach (var (other, _, otherMark) in _hosted)
+            if (!ReferenceEquals(other, plot) && otherMark.Clear()) other.InvalidateVisual();
+
+        if (plot.Name == "MagnitudePlotControl")
+        {
+            if (MagnitudeCursor(plot, pos, tf, mark, out string cursorText))
+            {
+                if (mark.Changed) plot.InvalidateVisual();
+                ShowReadout(plot, pos, cursorText);
+            }
+            else
+            {
+                if (mark.Clear()) plot.InvalidateVisual();
+                HideReadout();
+            }
+            return;
+        }
+
         Trace? hit = null;
         int index = -1;
         var world = default(Vector2);
@@ -411,12 +429,9 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
             }
         }
 
-        foreach (var (other, _, otherMark) in _hosted)
-            if (!ReferenceEquals(other, plot) && otherMark.Move(null, default)) other.InvalidateVisual();
-
         if (hit is null)
         {
-            if (mark.Move(null, default)) plot.InvalidateVisual();
+            if (mark.Clear()) plot.InvalidateVisual();
             HideReadout();
             return;
         }
@@ -424,9 +439,64 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
         ShowReadout(plot, pos, Readout(plot.Plot, hit, index));
     }
 
+    /// <summary>
+    /// The magnitude plot reads every trace at the pointer's frequency: one vertical line, a dot where
+    /// it crosses each curve, and every value in the popup. False when the pointer is outside the plot
+    /// box or off the frequency span.
+    /// </summary>
+    private static bool MagnitudeCursor(PlotControl host, Point pos, TransformSet tf, HoverMark mark, out string text)
+    {
+        text = "";
+        var plot = host.Plot!;
+        var vp = tf.Viewport;
+        double left = vp.X * host.Bounds.Width, right = (vp.X + vp.Width) * host.Bounds.Width;
+        double top = vp.Y * host.Bounds.Height, bottom = (vp.Y + vp.Height) * host.Bounds.Height;
+        if (pos.X < left || pos.X > right || pos.Y < top || pos.Y > bottom) return false;
+
+        double worldX = tf.PrimaryFromCanvas((float)pos.X, (float)pos.Y).Wx;
+        if (!double.IsFinite(worldX)) return false;
+
+        var hits = new List<(Vector2 At, SKColor Color)>();
+        var lines = new List<string>();
+        foreach (var trace in plot.Traces)
+        {
+            if (!Intersection(trace, worldX, out double y)) continue;
+            hits.Add((new Vector2((float)worldX, (float)y), trace.Properties.LineColor));
+            var marker = new Marker(trace, 0, false, false, 0);
+            lines.Add(DbFloor.Label(trace.ReadoutDescription(false), trace.FormatScalarValue(y, marker)));
+        }
+        if (hits.Count == 0) return false;
+
+        double hz = worldX / plot.FreqUnits.Scale();
+        text = (double.IsFinite(hz) ? SParameterViewerPreset.Hz(hz) + "\n" : "") + string.Join("\n", lines);
+        mark.MoveCursor(worldX, plot.Axes.Window.Top, plot.Axes.Window.Bottom, hits);
+        return true;
+    }
+
+    /// <summary>The plotted value where a vertical line at <paramref name="worldX"/> crosses the trace.
+    /// Between two samples it is the straight segment the plot draws, not a new sample.</summary>
+    private static bool Intersection(Trace trace, double worldX, out double y)
+    {
+        y = double.NaN;
+        var pts = trace.Points;
+        if (pts.Count == 0 || worldX < pts[0].X || worldX > pts[^1].X) return false;
+        if (pts.Count == 1) { y = pts[0].Y; return double.IsFinite(y); }
+        for (int i = 0; i < pts.Count - 1; i++)
+        {
+            double x0 = pts[i].X, x1 = pts[i + 1].X;
+            if (x1 == x0) continue;
+            bool spans = (x0 <= worldX && worldX <= x1) || (x1 <= worldX && worldX <= x0);
+            if (!spans) continue;
+            double t = (worldX - x0) / (x1 - x0);
+            y = pts[i].Y + t * (pts[i + 1].Y - pts[i].Y);
+            return double.IsFinite(y);
+        }
+        return false;
+    }
+
     private void ClearHover(PlotControl plot, HoverMark mark)
     {
-        if (mark.Move(null, default)) plot.InvalidateVisual();
+        if (mark.Clear()) plot.InvalidateVisual();
         HideReadout();
     }
 
@@ -450,8 +520,10 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
 
         label.Text = text;
         box.IsVisible = true;
-        double w = box.Bounds.Width > 1 ? box.Bounds.Width : 160;
-        double h = box.Bounds.Height > 1 ? box.Bounds.Height : 40;
+        int lines = 1;
+        foreach (char c in text) if (c == '\n') lines++;
+        double w = box.Bounds.Width > 1 ? box.Bounds.Width : 180;
+        double h = box.Bounds.Height > 1 && box.Bounds.Height >= 14 * lines ? box.Bounds.Height : 16 * lines + 10;
         double x = origin.X + 16, y = origin.Y + 16;
         if (x + w > layer.Bounds.Width) x = origin.X - w - 10;
         if (y + h > layer.Bounds.Height) y = origin.Y - h - 10;
@@ -470,32 +542,75 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
 }
 
 /// <summary>
-/// The dot a hover leaves on the nearest sample. It draws and nothing else: a press is the plot's own,
-/// so panning and marker placement are unchanged.
+/// Hover chrome. On the Smith chart and the phase plot it is a dot on the nearest sample. On the
+/// magnitude plot it is a vertical line at the pointer's frequency, with a dot where the line crosses
+/// each trace. It draws and nothing else: a press is the plot's own, so panning and marker placement
+/// are unchanged.
 /// </summary>
 sealed class HoverMark : IPlotOverlay
 {
     private Vector2? _at;
     private SKColor _color;
+    private bool _cursor;
+    private double _x, _yTop, _yBot;
+    private readonly List<(Vector2 At, SKColor Color)> _hits = [];
+
+    /// <summary>True when the last <see cref="Move"/> or <see cref="MoveCursor"/> changed what is drawn.</summary>
+    public bool Changed { get; private set; }
 
     /// <summary>Moves the dot. False when it was already there, so a pointer crossing the plot does not
     /// repaint it on every pixel.</summary>
     public bool Move(Vector2? at, SKColor color)
     {
-        if (_at == at && _color == color) return false;
+        Changed = _cursor || _hits.Count > 0 || _at != at || _color != color;
+        _cursor = false;
+        _hits.Clear();
         _at = at;
         _color = color;
-        return true;
+        return Changed;
     }
+
+    /// <summary>The magnitude cursor: the line at <paramref name="worldX"/> and a dot on every crossing.</summary>
+    public void MoveCursor(double worldX, double yTop, double yBot, List<(Vector2 At, SKColor Color)> hits)
+    {
+        Changed = !_cursor || _x != worldX || _hits.Count != hits.Count;
+        _cursor = true;
+        _at = null;
+        _x = worldX;
+        _yTop = yTop;
+        _yBot = yBot;
+        _hits.Clear();
+        _hits.AddRange(hits);
+    }
+
+    /// <summary>Removes the dot and the line.</summary>
+    public bool Clear() => Move(null, default);
 
     public void Draw(SKCanvas canvas, TransformSet tf, RenderTheme theme)
     {
-        if (_at is not { } at) return;
-        var c = tf.ToCanvas(at.X, at.Y, false);
-        using var fill = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = _color };
+        if (_cursor)
+        {
+            var a = tf.ToCanvas(_x, _yTop, false);
+            var b = tf.ToCanvas(_x, _yBot, false);
+            using var line = new SKPaint
+            {
+                IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.25f,
+                Color = RenderTheme.WithOpacity(theme.TextColor, 0.55),
+            };
+            canvas.DrawLine(a, b, line);
+            foreach (var (at, color) in _hits) DrawDot(canvas, tf.ToCanvas(at.X, at.Y, false), color, 4f);
+            return;
+        }
+        if (_at is not { } one) return;
+        DrawDot(canvas, tf.ToCanvas(one.X, one.Y, false), _color, 5f);
+    }
+
+    private static void DrawDot(SKCanvas canvas, SKPoint c, SKColor color, float radius)
+    {
+        using var fill = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = color };
         using var ring = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.6f, Color = SKColors.White };
-        canvas.DrawCircle(c.X, c.Y, 5f, fill);
-        canvas.DrawCircle(c.X, c.Y, 5f, ring);
+        canvas.DrawCircle(c, radius, fill);
+        canvas.DrawCircle(c, radius, ring);
     }
 
     public object? HitTest(double canvasX, double canvasY, TransformSet tf) => null;
