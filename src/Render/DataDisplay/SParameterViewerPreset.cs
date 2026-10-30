@@ -237,15 +237,33 @@ public static class SParameterViewerPreset
     }
 
     /// <summary>
-    /// The Smith hover: the term at its frequency, <see cref="Gamma"/>, then the impedance line the
-    /// marker already states. That line keeps its spelling and ends in Ω.
+    /// The Smith hover: the term at its frequency, <see cref="Gamma"/>, then the impedance as
+    /// <c>Z = …</c>, ending in Ω.
     /// </summary>
     public static string SmithHover(string term, double hz, System.Numerics.Complex gamma, string? impedance)
     {
         string head = double.IsFinite(hz) ? $"{term} @ {Hz(hz)}" : term;
         if (string.IsNullOrEmpty(impedance)) return head + "\n" + Gamma(gamma);
-        string z = impedance.EndsWith("Ω", StringComparison.Ordinal) ? impedance : impedance + " Ω";
-        return head + "\n" + Gamma(gamma) + "\n" + z;
+        return head + "\n" + Gamma(gamma) + "\n" + AsZ(impedance);
+    }
+
+    /// <summary>
+    /// The marker's impedance sentence, spelled <c>Z = …</c> and ending in Ω.
+    /// <c>impedance=Z0*(1+j0)</c> becomes <c>Z = Z0*(1+j0) Ω</c>.
+    /// </summary>
+    public static string AsZ(string impedance)
+    {
+        string body = impedance;
+        if (body.StartsWith("impedance", StringComparison.OrdinalIgnoreCase))
+            body = body["impedance".Length..];
+        body = body.TrimStart();
+        if (body.StartsWith('='))
+            body = "Z = " + body[1..].TrimStart();
+        else
+            body = "Z " + body;
+        if (!body.EndsWith("Ω", StringComparison.Ordinal))
+            body += " Ω";
+        return body;
     }
 
     private static string Ohms(System.Numerics.Complex z) =>

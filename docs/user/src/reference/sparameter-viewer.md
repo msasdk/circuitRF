@@ -51,7 +51,7 @@ the file name opens that file in the system file manager.
 | **Parameters** | S, Y or Z, and how the numbers are written: real and imaginary, magnitude and angle, or dB and angle. |
 | **Unit** | The frequency unit on the file's option line. |
 | **Points, Start, Stop** | How many frequencies, and the first and the last. |
-| **DC point** | Yes when a sample is at 0 Hz. Otherwise No, with a warning. |
+| **DC point** | Yes when a sample is at 0 Hz. Otherwise No, with a yellow warning, repeated on the status bar. |
 | **Spacing** | Uniform, with its step; logarithmic, with its points per decade; or irregular, with its smallest and largest step. |
 | **Reference** | The reference impedance, per port when the ports differ. |
 | **Noise data** | How many noise rows a two-port carries, or none. |
@@ -95,7 +95,7 @@ Hover the magnitude or phase plot and a vertical line crosses every trace at tha
 each value in the box beside the pointer. On the Smith chart and the polar chart the marker sits on
 the nearest sample. A Smith reflection reads `S(1,1) @ 2.4 GHz`, then Γ as a real and imaginary pair
 and as a magnitude and angle — `Γ = 0.5+j0.1 (0.51 ∠ 11.31°)` — then the impedance at the file's
-reference, ending in Ω.
+reference as `Z = Z0*(1+j0) Ω`.
 A double-click still drops a marker you can drag and keep, and
 **Delete** removes the selected ones. Arrow keys step a kept marker one sample at a time.
 

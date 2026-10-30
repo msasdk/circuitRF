@@ -64,9 +64,10 @@ log-spaced file gets a log axis. Every trace is a network trace, so it draws the
 and nothing between them.
 
 The left pane is titled **File information**. It says whether a sample sits at 0 Hz — Yes, or No with
-a warning — and, when the file has any, how many comment lines it carries. The path under the file
-name opens that file in the system file manager. A Smith hover names the term at that frequency, then
-Γ in rectangular form and as a magnitude and angle, then the impedance line, ending in Ω.
+a yellow warning, which the status bar repeats — and, when the file has any, how many comment lines
+it carries. The path under the file name opens that file in the system file manager. A Smith hover
+names the term at that frequency, then Γ in rectangular form and as a magnitude and angle, then
+`Z = …`, ending in Ω.
 
 A grid is called uniform or logarithmic within a part in 10³ of its step, with a floor at the
 precision a frequency is printed to. `TouchstoneHealth`'s own tolerance is 10⁻⁶ and answers a

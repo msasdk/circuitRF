@@ -549,8 +549,6 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
             if (trace.MarkerShowsImpedance(marker))
             {
                 z = trace.GetMarkerImpedanceString(marker);
-                if (z.StartsWith("impedance", StringComparison.Ordinal))
-                    z = "Impedance" + z["impedance".Length..];
                 if (z.Length == 0) z = null;
             }
             string term = $"{trace.MatrixType}({trace.Row + 1},{trace.Col + 1})";

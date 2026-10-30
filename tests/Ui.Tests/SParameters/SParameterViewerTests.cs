@@ -189,6 +189,10 @@ public sealed class SParameterViewerTests : IDisposable
         var source = Read(Write(1, [0, 1e9, 2e9], "fromdc.s1p"));
         Assert.True(source.Facts.HasDcPoint);
         Assert.Equal("Yes", SParameterViewerPreset.FileFacts(source.Facts).Single(r => r.Label == "DC point").Value);
+        var vm = new SParameterViewerViewModel();
+        vm.Show(source.Path, source, null);
+        Assert.False(vm.DcPointMissing);
+        Assert.False(vm.Facts.Single(r => r.Label == "DC point").Warn);
     }
 
     [Fact]
@@ -197,11 +201,11 @@ public sealed class SParameterViewerTests : IDisposable
         Assert.Equal("Γ = 21+j30 (36.62 ∠ 55.01°)", SParameterViewerPreset.Gamma(new Complex(21, 30)));
         Assert.Equal("Γ = 21-j30 (36.62 ∠ -55.01°)", SParameterViewerPreset.Gamma(new Complex(21, -30)));
         Assert.Equal(
-            "S(1,1) @ 2.4 GHz\nΓ = 0.5+j0.1 (0.51 ∠ 11.31°)\nImpedance=Z0*(1+j0) Ω",
-            SParameterViewerPreset.SmithHover("S(1,1)", 2.4e9, new Complex(0.5, 0.1), "Impedance=Z0*(1+j0)"));
+            "S(1,1) @ 2.4 GHz\nΓ = 0.5+j0.1 (0.51 ∠ 11.31°)\nZ = Z0*(1+j0) Ω",
+            SParameterViewerPreset.SmithHover("S(1,1)", 2.4e9, new Complex(0.5, 0.1), "impedance=Z0*(1+j0)"));
         Assert.Equal(
-            "S(2,2) @ 1 GHz\nΓ = 0+j0 (0.00 ∠ 0°)\nImpedance=50 Ω",
-            SParameterViewerPreset.SmithHover("S(2,2)", 1e9, Complex.Zero, "Impedance=50 Ω"));
+            "S(2,2) @ 1 GHz\nΓ = 0+j0 (0.00 ∠ 0°)\nZ = 50 Ω",
+            SParameterViewerPreset.SmithHover("S(2,2)", 1e9, Complex.Zero, "impedance=50 Ω"));
     }
 
     // ── the source ───────────────────────────────────────────────────────────
@@ -351,6 +355,11 @@ public sealed class SParameterViewerTests : IDisposable
         Assert.False(vm.IsEmpty);
         Assert.EndsWith("part.s2p", vm.Title);
         Assert.Contains(vm.Facts, r => r.Label == "Points" && r.Value == "41");
+        var dc = Assert.Single(vm.Facts, r => r.Label == "DC point");
+        Assert.Equal("No ⚠", dc.Value);
+        Assert.True(dc.Warn);
+        Assert.Equal("No", dc.Text);
+        Assert.True(vm.DcPointMissing);
         Assert.Equal(["S11", "S12", "S21", "S22"], vm.Terms.Select(t => t.Name));
         Assert.All(vm.Terms, t => Assert.True(t.IsChecked));
         Assert.Equal(2, vm.SmithPlot.Traces.Count);

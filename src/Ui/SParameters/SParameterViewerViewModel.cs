@@ -18,7 +18,17 @@ using SkiaSharp;
 namespace CircuitRF.Ui.SParameters;
 
 /// <summary>One line of the file pane: a label and what the file states.</summary>
-public sealed record SParameterFactRow(string Label, string Value);
+public sealed record SParameterFactRow(string Label, string Value)
+{
+    /// <summary>The warning mark, in text presentation so a yellow foreground colours it.</summary>
+    public const string WarningGlyph = "⚠\uFE0E";
+
+    /// <summary>True when this line carries the warning mark — a DC point the file does not have.</summary>
+    public bool Warn => Value.Contains('⚠');
+
+    /// <summary>The value with the warning mark taken off; the mark is drawn beside it, in yellow.</summary>
+    public string Text => Warn ? Value.Replace("⚠", "", StringComparison.Ordinal).TrimEnd() : Value;
+}
 
 /// <summary>One trace name beside its plot: the colour it is drawn in, and the name the plot would have given it.</summary>
 public sealed record SParameterLegendEntry(string Label, SKColor Color);
@@ -148,6 +158,9 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
 
     [ObservableProperty] private string _status = "";
 
+    /// <summary>The open file has no sample at 0 Hz. The file pane and the status bar both warn.</summary>
+    [ObservableProperty] private bool _dcPointMissing;
+
     /// <summary>
     /// Which plots the toolbar has on. The window opens on the Smith chart and magnitude; polar and
     /// phase are a click away. Every one of them can be off, and then the pane is empty.
@@ -218,6 +231,7 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
         {
             ErrorText = refusal?.Render() ?? $"'{Path.GetFileName(full)}' could not be read.";
             Status = "Not shown: the file could not be read.";
+            DcPointMissing = false;
             ClearPlots();
             OnPropertyChanged(nameof(HasFile));
             OnPropertyChanged(nameof(HasFindings));
@@ -226,6 +240,7 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
 
         ErrorText = null;
         var f = source.Facts;
+        DcPointMissing = !f.HasDcPoint;
         foreach (var (label, value) in SParameterViewerPreset.FileFacts(f))
             Facts.Add(new SParameterFactRow(label, value));
         foreach (var d in source.Findings) Findings.Add(d.Render());

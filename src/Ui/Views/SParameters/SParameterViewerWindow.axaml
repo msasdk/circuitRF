@@ -119,6 +119,8 @@
     </Window.Styles>
 
     <Window.Resources>
+        <!-- The DC-point warning. Yellow on purpose: the theme's warning colour is red. -->
+        <SolidColorBrush x:Key="DcWarningBrush" Color="#E6A800"/>
         <!-- Beside the plot, vertically centred: a swatch and the name, never a box over the curves. -->
         <DataTemplate x:Key="SideLegendItem" x:DataType="vm:SParameterLegendEntry">
             <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,1">
@@ -190,10 +192,14 @@
                                     <ItemsControl ItemsSource="{Binding Facts}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="vm:SParameterFactRow">
-                                                <Grid ColumnDefinitions="Auto,*" Margin="0,1">
+                                                <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,1">
                                                     <TextBlock Classes="lbl" Text="{Binding Label}" Margin="0,0,10,0"/>
                                                     <SelectableTextBlock Grid.Column="1" FontSize="12" TextAlignment="Right" TextWrapping="Wrap"
-                                                                         HorizontalAlignment="Right" VerticalAlignment="Center" Text="{Binding Value}"/>
+                                                                         HorizontalAlignment="Right" VerticalAlignment="Center" Text="{Binding Text}"/>
+                                                    <TextBlock Grid.Column="2" FontSize="12" Margin="4,0,0,0" VerticalAlignment="Center"
+                                                               Text="{x:Static vm:SParameterFactRow.WarningGlyph}"
+                                                               Foreground="{StaticResource DcWarningBrush}"
+                                                               IsVisible="{Binding Warn}"/>
                                                 </Grid>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
@@ -363,7 +369,16 @@
 
         <!-- ── footer: what is on show, then the one action ──────────────────────── -->
         <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="6,2,6,4">
-            <TextBlock FontSize="12" Opacity="0.85" Text="{Binding Status}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+            <DockPanel LastChildFill="True" VerticalAlignment="Center">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"
+                            Margin="10,0,0,0" IsVisible="{Binding DcPointMissing}">
+                    <TextBlock FontSize="12" Opacity="0.85" VerticalAlignment="Center" Text="No DC point"/>
+                    <TextBlock FontSize="12" Margin="4,0,0,0" VerticalAlignment="Center"
+                               Text="{x:Static vm:SParameterFactRow.WarningGlyph}"
+                               Foreground="{StaticResource DcWarningBrush}"/>
+                </StackPanel>
+                <TextBlock FontSize="12" Opacity="0.85" Text="{Binding Status}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+            </DockPanel>
             <Button Grid.Column="1" Classes="small" Margin="6,0,0,0" Content="Close" Click="OnClose"/>
         </Grid>
     </Grid>
