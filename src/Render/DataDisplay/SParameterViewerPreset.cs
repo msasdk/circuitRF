@@ -224,21 +224,21 @@ public static class SParameterViewerPreset
 
     /// <summary>
     /// Γ at one Smith-chart sample: rectangular, then magnitude and angle.
-    /// <c>Γ = 21+j30 (36.62 ∠ 55.01°)</c>.
+    /// <c>Γ=21+j30 (36.62 ∠ 55.01°)</c>.
     /// </summary>
     public static string Gamma(System.Numerics.Complex g)
     {
         var inv = CultureInfo.InvariantCulture;
-        if (!double.IsFinite(g.Real) || !double.IsFinite(g.Imaginary)) return "Γ = —";
+        if (!double.IsFinite(g.Real) || !double.IsFinite(g.Imaginary)) return "Γ=—";
         string sign = g.Imaginary < 0 ? "-" : "+";
         double deg = g.Phase * 180.0 / Math.PI;
-        return $"Γ = {g.Real.ToString("0.####", inv)}{sign}j{Math.Abs(g.Imaginary).ToString("0.####", inv)} " +
+        return $"Γ={g.Real.ToString("0.####", inv)}{sign}j{Math.Abs(g.Imaginary).ToString("0.####", inv)} " +
                $"({g.Magnitude.ToString("0.00", inv)} ∠ {deg.ToString("0.##", inv)}°)";
     }
 
     /// <summary>
     /// The Smith hover: the term at its frequency, <see cref="Gamma"/>, then the impedance as
-    /// <c>Z = …</c>, ending in Ω.
+    /// <c>Z=…</c>, ending in Ω.
     /// </summary>
     public static string SmithHover(string term, double hz, System.Numerics.Complex gamma, string? impedance)
     {
@@ -248,8 +248,8 @@ public static class SParameterViewerPreset
     }
 
     /// <summary>
-    /// The marker's impedance sentence, spelled <c>Z = …</c> and ending in Ω.
-    /// <c>impedance=Z0*(1+j0)</c> becomes <c>Z = Z0*(1+j0) Ω</c>.
+    /// The marker's impedance sentence, spelled <c>Z=…</c> and ending in Ω.
+    /// <c>impedance=Z0*(1+j0)</c> becomes <c>Z=Z0*(1+j0) Ω</c>.
     /// </summary>
     public static string AsZ(string impedance)
     {
@@ -258,7 +258,7 @@ public static class SParameterViewerPreset
             body = body["impedance".Length..];
         body = body.TrimStart();
         if (body.StartsWith('='))
-            body = "Z = " + body[1..].TrimStart();
+            body = "Z=" + body[1..].TrimStart();
         else
             body = "Z " + body;
         if (!body.EndsWith("Ω", StringComparison.Ordinal))

@@ -198,13 +198,13 @@ public sealed class SParameterViewerTests : IDisposable
     [Fact]
     public void ASmithHoverNamesTheTermThenGammaThenTheImpedance()
     {
-        Assert.Equal("Γ = 21+j30 (36.62 ∠ 55.01°)", SParameterViewerPreset.Gamma(new Complex(21, 30)));
-        Assert.Equal("Γ = 21-j30 (36.62 ∠ -55.01°)", SParameterViewerPreset.Gamma(new Complex(21, -30)));
+        Assert.Equal("Γ=21+j30 (36.62 ∠ 55.01°)", SParameterViewerPreset.Gamma(new Complex(21, 30)));
+        Assert.Equal("Γ=21-j30 (36.62 ∠ -55.01°)", SParameterViewerPreset.Gamma(new Complex(21, -30)));
         Assert.Equal(
-            "S(1,1) @ 2.4 GHz\nΓ = 0.5+j0.1 (0.51 ∠ 11.31°)\nZ = Z0*(1+j0) Ω",
+            "S(1,1) @ 2.4 GHz\nΓ=0.5+j0.1 (0.51 ∠ 11.31°)\nZ=Z0*(1+j0) Ω",
             SParameterViewerPreset.SmithHover("S(1,1)", 2.4e9, new Complex(0.5, 0.1), "impedance=Z0*(1+j0)"));
         Assert.Equal(
-            "S(2,2) @ 1 GHz\nΓ = 0+j0 (0.00 ∠ 0°)\nZ = 50 Ω",
+            "S(2,2) @ 1 GHz\nΓ=0+j0 (0.00 ∠ 0°)\nZ=50 Ω",
             SParameterViewerPreset.SmithHover("S(2,2)", 1e9, Complex.Zero, "impedance=50 Ω"));
     }
 

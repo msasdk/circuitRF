@@ -94,8 +94,8 @@ an axis of 1E+09 to 5E+09 says the same thing badly.
 Hover the magnitude or phase plot and a vertical line crosses every trace at that frequency, with
 each value in the box beside the pointer. On the Smith chart and the polar chart the marker sits on
 the nearest sample. A Smith reflection reads `S(1,1) @ 2.4 GHz`, then Γ as a real and imaginary pair
-and as a magnitude and angle — `Γ = 0.5+j0.1 (0.51 ∠ 11.31°)` — then the impedance at the file's
-reference as `Z = Z0*(1+j0) Ω`.
+and as a magnitude and angle — `Γ=0.5+j0.1 (0.51 ∠ 11.31°)` — then the impedance at the file's
+reference as `Z=Z0*(1+j0) Ω`.
 A double-click still drops a marker you can drag and keep, and
 **Delete** removes the selected ones. Arrow keys step a kept marker one sample at a time.
 
