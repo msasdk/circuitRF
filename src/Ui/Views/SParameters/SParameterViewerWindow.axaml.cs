@@ -247,6 +247,49 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
             container.Height = plot.Bounds.Height;
             container.NotifyViewProperties();
         }
+        PlaceLegends();
+    }
+
+    /// <summary>
+    /// The trace names sit just beside the graph: the disc on a Smith chart, the plot box on a rectangular
+    /// one. A column at the pane's edge left them a chart-width away from a centred disc.
+    /// </summary>
+    private void PlaceLegends()
+    {
+        PlaceLegend(this.FindControl<PlotControl>("SmithPlotControl"), this.FindControl<ItemsControl>("SmithLegendList"));
+        PlaceLegend(this.FindControl<PlotControl>("MagnitudePlotControl"), this.FindControl<ItemsControl>("MagnitudeLegendList"));
+        PlaceLegend(this.FindControl<PlotControl>("PhasePlotControl"), this.FindControl<ItemsControl>("PhaseLegendList"));
+    }
+
+    private const double LegendGap = 6;
+
+    private static void PlaceLegend(PlotControl? plot, ItemsControl? legend)
+    {
+        if (plot?.Plot is not { } model || legend is null) return;
+        if (plot.Bounds.Width < 2 || plot.Bounds.Height < 2) return;
+        double lw = legend.Bounds.Width, lh = legend.Bounds.Height;
+        if (lw < 1 || lh < 1) return;
+
+        // A rectangular plot gives the list its own strip, so the axis ends at the names instead of
+        // a margin's width before them. The Smith disc stays centred; the list moves to its edge.
+        if (model.PlotType == PlotType.Rect)
+        {
+            var v = model.Axes.Viewport;
+            double width = Math.Max(0.45, 1 - (lw + LegendGap + 2) / plot.Bounds.Width - v.X);
+            if (Math.Abs(v.Width - width) > 0.008)
+            {
+                model.Axes.Viewport = new PlotRect(v.X, v.Y, width, v.Height);
+                plot.InvalidateVisual();
+            }
+        }
+
+        var chart = PlotCanvasGeometry.ChartRect(model, plot.Bounds.Width, plot.Bounds.Height);
+        double x = Math.Clamp(chart.Left + chart.Width + LegendGap, 0, Math.Max(0, plot.Bounds.Width - lw - 2));
+        double y = Math.Clamp(chart.Top + (chart.Height - lh) / 2, 0, Math.Max(0, plot.Bounds.Height - lh - 2));
+        if (double.IsNaN(Canvas.GetLeft(legend)) || Math.Abs(Canvas.GetLeft(legend) - x) > 0.5)
+            Canvas.SetLeft(legend, x);
+        if (double.IsNaN(Canvas.GetTop(legend)) || Math.Abs(Canvas.GetTop(legend) - y) > 0.5)
+            Canvas.SetTop(legend, y);
     }
 
     private void OnWindowPointerPressed(object? sender, PointerPressedEventArgs e)

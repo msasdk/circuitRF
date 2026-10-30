@@ -249,12 +249,20 @@
             </Border>
 
             <!-- ── right: the plots ─────────────────────────────────────────────── -->
-            <Border Grid.Column="1" Classes="pane" Padding="2" ClipToBounds="True">
+            <Border Grid.Column="1" Classes="pane" ClipToBounds="True">
                 <Grid>
+                    <!-- Nothing open: the way in, centred. The pane stays otherwise empty. -->
+                    <Button IsVisible="{Binding !HasFile}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                            Classes="small" Command="{Binding OpenFileCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <mi:MaterialIcon Kind="FolderOpenOutline" Width="14" Height="14"/>
+                            <TextBlock Text="Open Touchstone file…"/>
+                        </StackPanel>
+                    </Button>
                     <Grid IsVisible="{Binding HasFile}" RowDefinitions="Auto,*">
                         <!-- Which plots: one fills the pane, two stack with the Smith chart on top, three go
                              Smith, magnitude, phase from top to bottom. None of them on leaves the pane empty. -->
-                        <StackPanel Orientation="Horizontal" Margin="2,0,0,2">
+                        <StackPanel Orientation="Horizontal" Margin="2,0,0,4">
                             <ToggleButton Classes="plotpick" IsChecked="{Binding ShowSmith, Mode=TwoWay}" ToolTip.Tip="Smith chart — the reflections">
                                 <ddc:PlotTypeGlyphControl Kind="Smith" Width="16" Height="16"
                                                           Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
@@ -269,26 +277,32 @@
                         <!-- A hidden plot's row is 0 tall AND the grid clips, so a Smith chart that used to draw
                              past its row cannot sit behind the plots turned on below it. -->
                         <Grid Name="PlotGrid" Grid.Row="1" RowDefinitions="*,*,*" ClipToBounds="True">
-                        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ClipToBounds="True" IsVisible="{Binding ShowSmith}">
+                        <Grid Grid.Row="0" ClipToBounds="True" IsVisible="{Binding ShowSmith}">
                             <ddc:PlotControl Name="SmithPlotControl" ClipToBounds="True"
                                              Plot="{Binding SmithPlot}" Library="{Binding PlotHost.Library}"
                                              CanDeletePlot="False" CanEditPlotProperties="False"/>
-                            <ItemsControl Grid.Column="1" ItemsSource="{Binding SmithLegend}" VerticalAlignment="Center"
-                                          Margin="8,0,2,0" ItemTemplate="{StaticResource SideLegendItem}"/>
+                            <Canvas IsHitTestVisible="False">
+                                <ItemsControl Name="SmithLegendList" ItemsSource="{Binding SmithLegend}"
+                                              ItemTemplate="{StaticResource SideLegendItem}"/>
+                            </Canvas>
                         </Grid>
-                        <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ClipToBounds="True" IsVisible="{Binding ShowMagnitude}">
+                        <Grid Grid.Row="1" ClipToBounds="True" IsVisible="{Binding ShowMagnitude}">
                             <ddc:PlotControl Name="MagnitudePlotControl" ClipToBounds="True"
                                              Plot="{Binding MagnitudePlot}" Library="{Binding PlotHost.Library}"
                                              CanDeletePlot="False" CanEditPlotProperties="False"/>
-                            <ItemsControl Grid.Column="1" ItemsSource="{Binding MagnitudeLegend}" VerticalAlignment="Center"
-                                          Margin="8,0,2,0" ItemTemplate="{StaticResource SideLegendItem}"/>
+                            <Canvas IsHitTestVisible="False">
+                                <ItemsControl Name="MagnitudeLegendList" ItemsSource="{Binding MagnitudeLegend}"
+                                              ItemTemplate="{StaticResource SideLegendItem}"/>
+                            </Canvas>
                         </Grid>
-                        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ClipToBounds="True" IsVisible="{Binding ShowPhase}">
+                        <Grid Grid.Row="2" ClipToBounds="True" IsVisible="{Binding ShowPhase}">
                             <ddc:PlotControl Name="PhasePlotControl" ClipToBounds="True"
                                              Plot="{Binding PhasePlot}" Library="{Binding PlotHost.Library}"
                                              CanDeletePlot="False" CanEditPlotProperties="False"/>
-                            <ItemsControl Grid.Column="1" ItemsSource="{Binding PhaseLegend}" VerticalAlignment="Center"
-                                          Margin="8,0,2,0" ItemTemplate="{StaticResource SideLegendItem}"/>
+                            <Canvas IsHitTestVisible="False">
+                                <ItemsControl Name="PhaseLegendList" ItemsSource="{Binding PhaseLegend}"
+                                              ItemTemplate="{StaticResource SideLegendItem}"/>
+                            </Canvas>
                         </Grid>
                         <!-- The hover readout. It takes no pointer, so the plot under it keeps the move. -->
                         <Canvas Name="HoverLayer" Grid.RowSpan="3" IsHitTestVisible="False">
