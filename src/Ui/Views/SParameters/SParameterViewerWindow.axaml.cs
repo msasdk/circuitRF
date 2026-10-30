@@ -506,7 +506,14 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
         double hz = trace.Data.Frequencies.Length == trace.Points.Count
             ? trace.Data.Frequencies[index]
             : plot.PlotType.IsRect() ? trace.Points[index].X / plot.FreqUnits.Scale() : double.NaN;
-        string value = trace.GetMarkerValString(new Marker(trace, double.IsFinite(hz) ? hz : 0, false, false, 0), false);
+        var marker = new Marker(trace, double.IsFinite(hz) ? hz : 0, false, false, 0);
+        string value = trace.GetMarkerValString(marker, false);
+        // A reflection on the Smith chart is also an impedance at the file's reference.
+        if (plot.PlotType == PlotType.Smith && trace.MarkerShowsImpedance(marker))
+        {
+            string z = trace.GetMarkerImpedanceString(marker);
+            if (z.Length > 0) value += "\n" + z;
+        }
         return double.IsFinite(hz) ? value + "\n" + SParameterViewerPreset.Hz(hz) : value;
     }
 
