@@ -74,6 +74,13 @@ dB and phase over ±180°. A term's colour is its place in the selection, so it 
 every plot and the terms on show take the palette's first colours. Past six terms a rectangular plot
 draws no legend: sixteen entries cover the curves they name, and the tick boxes carry the colours.
 
+The window opens on the Smith chart and magnitude. Every toolbar button can be off, and then the
+pane is empty. It draws no title above a plot and lists the trace names beside it, up to the same
+six; the saved `.cdd` and `circuitrf snp` keep the preset's titles and in-plot legend. A Smith chart
+in a Data Display is given a canvas taller than the disc, for the title and the rows under it. The
+window's row cannot grow, so the hosted chart drops both — a disc pushed down to make room for a
+title paints past the row, over the window and over the plots below.
+
 Up to four ports the viewer opens on every term. Above that — an `.s16p` has 256 — it opens on the
 reflections and each forward neighbour S(i+1, i), and the rest are a tick away.
 

@@ -259,7 +259,8 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
     }
 
     /// <summary>A hidden plot's row takes nothing, so whichever are on fill the pane and keep their order:
-    /// Smith, then magnitude, then phase.</summary>
+    /// Smith, then magnitude, then phase. A star row stays a star while its child is merely hidden, which
+    /// is why the height is set here and not left to <c>IsVisible</c>.</summary>
     private void ApplyPlotRows()
     {
         if (Vm is null || this.FindControl<Grid>("PlotGrid") is not { } grid || grid.RowDefinitions.Count < 3) return;
@@ -267,6 +268,12 @@ public partial class SParameterViewerWindow : Window, ICrfMenuWindow
         grid.RowDefinitions[0].Height = Row(Vm.ShowSmith);
         grid.RowDefinitions[1].Height = Row(Vm.ShowMagnitude);
         grid.RowDefinitions[2].Height = Row(Vm.ShowPhase);
+        grid.InvalidateMeasure();
+        // A plot that collapses under the pointer never gets PointerExited, so the hover box would
+        // stay up over an empty pane.
+        HideReadout();
+        foreach (var (plot, _, mark) in _hosted)
+            if (mark.Move(null, default)) plot.InvalidateVisual();
     }
 
     // ── hover readout ────────────────────────────────────────────────────────

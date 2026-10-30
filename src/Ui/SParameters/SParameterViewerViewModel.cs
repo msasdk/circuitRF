@@ -23,6 +23,9 @@ public sealed record SParameterFactRow(string Label, string Value, string? Detai
     public bool HasDetail => Detail is { Length: > 0 };
 }
 
+/// <summary>One trace name beside its plot: the colour it is drawn in, and the name the plot would have given it.</summary>
+public sealed record SParameterLegendEntry(string Label, SKColor Color);
+
 /// <summary>One term of the matrix, ticked or not.</summary>
 public sealed partial class SParameterTermViewModel : ObservableObject
 {
@@ -79,8 +82,9 @@ public sealed partial class SParameterTermViewModel : ObservableObject
 /// <remarks>
 /// <b>It owns no reading, rule or plot.</b> The file is read through <see cref="TouchstoneSource"/>, the
 /// facts and findings are <see cref="TouchstoneFacts"/>' and the plots are <see cref="SParameterViewerPreset"/>'s,
-/// loaded through <see cref="PlotConfigLoader"/> — exactly what <c>circuitrf snp</c> draws, so a picture
-/// taken on a build machine is the one this window shows.
+/// loaded through <see cref="PlotConfigLoader"/> — the same traces and axes <c>circuitrf snp</c> draws.
+/// The window hosts them stacked and puts each plot's names beside it; the picture and the saved
+/// Data Display keep the preset's titles and legend.
 ///
 /// <para><b>The plots are hosted as the Signal Designer's are</b>: one <see cref="DataDisplayViewModel"/>
 /// with three containers, so markers, their info boxes, zoom and copy all work as in a Data Display. It is
@@ -147,28 +151,13 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
     /// <summary>A dot at every point the file holds, so the step can be seen.</summary>
     [ObservableProperty] private bool _showSamples;
 
-    /// <summary>Which of the three plots the toolbar has on. At least one stays on: turning the last one off
-    /// turns it back, because a viewer with no plot is the empty state and that one already has a sentence.</summary>
+    /// <summary>
+    /// Which plots the toolbar has on. The window opens on the Smith chart and magnitude; phase is a
+    /// click away. Every one of them can be off, and then the pane is empty.
+    /// </summary>
     [ObservableProperty] private bool _showSmith = true;
     [ObservableProperty] private bool _showMagnitude = true;
-    [ObservableProperty] private bool _showPhase = true;
-
-    private bool _keepingAPlot;
-
-    partial void OnShowSmithChanged(bool value) => KeepAPlot(value, () => ShowSmith = true);
-    partial void OnShowMagnitudeChanged(bool value) => KeepAPlot(value, () => ShowMagnitude = true);
-    partial void OnShowPhaseChanged(bool value) => KeepAPlot(value, () => ShowPhase = true);
-
-    private void KeepAPlot(bool value, Action restore)
-    {
-        if (_keepingAPlot) return;
-        if (!value && !ShowSmith && !ShowMagnitude && !ShowPhase)
-        {
-            _keepingAPlot = true;
-            restore();
-            _keepingAPlot = false;
-        }
-    }
+    [ObservableProperty] private bool _showPhase;
 
     /// <summary>The window title and its Window-menu entry.</summary>
     public string Title => FileName is { } name ? $"{ToolName} — {name}" : ToolName;
@@ -191,6 +180,12 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
     public bool HasFindings => Findings.Count > 0;
 
     public ObservableCollection<SParameterTermViewModel> Terms { get; } = [];
+
+    /// <summary>Trace names drawn beside each plot. Empty past <see cref="SParameterViewerPreset.LegendUpToTerms"/>,
+    /// where the list would take the width the curves need; the tick boxes still carry the colours.</summary>
+    public ObservableCollection<SParameterLegendEntry> SmithLegend { get; } = [];
+    public ObservableCollection<SParameterLegendEntry> MagnitudeLegend { get; } = [];
+    public ObservableCollection<SParameterLegendEntry> PhaseLegend { get; } = [];
 
     /// <summary>How many tick boxes a row of the term grid holds: one per port, up to six.</summary>
     [ObservableProperty] private int _termColumns = 2;
@@ -293,6 +288,9 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
 
         foreach (var composed in SParameterViewerPreset.Compose(_source, selection, ShowSamples))
             Refill(ContainerOf(composed.Kind), composed.Config, _source);
+        FillLegend(SmithLegend, SmithPlot);
+        FillLegend(MagnitudeLegend, MagnitudePlot);
+        FillLegend(PhaseLegend, PhasePlot);
 
         int traces = selection.Count;
         Status = selection.Count == 0
@@ -331,8 +329,47 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
             plot.Traces.Add(trace);
         }
         PlotConfigLoader.RestoreAxes(plot, pc.Axes);
+        PresentInPane(plot);
         container.OnPlotChanged(container, EventArgs.Empty);
         container.RequestPlotRedraw();
+    }
+
+    /// <summary>
+    /// Hosts <paramref name="plot"/> in a fixed row. A Data Display grows a Smith canvas so the title and the
+    /// frequency rows under the disc have somewhere to go; this row cannot grow, and that extra used to paint
+    /// past the row — over the window, and over whichever plots were turned on below it. The names sit beside
+    /// the plot instead, and a rectangular plot gives the band its title took back to the curves.
+    /// </summary>
+    private static void PresentInPane(Plot plot)
+    {
+        plot.CustomTitleOn = false;
+        plot.Legend = LegendPlacement.Off;
+        if (plot.PlotType == PlotType.Smith)
+        {
+            foreach (var t in plot.Traces) t.ExcludeFromAxisLabels = true;
+            return;
+        }
+        if (plot.PlotType != PlotType.Rect) return;
+        var v = plot.Axes.Viewport;
+        const double top = 0.012;
+        if (v.Y > top)
+            plot.Axes.Viewport = new PlotRect(v.X, top, v.Width, v.Height + (v.Y - top));
+    }
+
+    /// <summary>The names <see cref="LegendRenderer"/> would have put in the plot, listed beside it instead.</summary>
+    private static void FillLegend(ObservableCollection<SParameterLegendEntry> target, Plot plot)
+    {
+        target.Clear();
+        if (plot.Traces.Count == 0 || plot.Traces.Count > SParameterViewerPreset.LegendUpToTerms) return;
+        var names = TraceLabeler.ComputeMinimalLabels(plot.Traces);
+        for (int i = 0; i < plot.Traces.Count; i++)
+        {
+            var t = plot.Traces[i];
+            string name = i < names.Count ? names[i] : t.ShortDescription;
+            target.Add(new SParameterLegendEntry(
+                plot.PlotType == PlotType.Rect ? t.RectYLabel(name, false) : name,
+                t.Properties.LineColor));
+        }
     }
 
     private void ClearPlots()
@@ -343,6 +380,9 @@ public sealed partial class SParameterViewerViewModel : ObservableObject
             c.OnPlotChanged(c, EventArgs.Empty);
             c.RequestPlotRedraw();
         }
+        SmithLegend.Clear();
+        MagnitudeLegend.Clear();
+        PhaseLegend.Clear();
         PlotsUpdated?.Invoke(this, EventArgs.Empty);
     }
 

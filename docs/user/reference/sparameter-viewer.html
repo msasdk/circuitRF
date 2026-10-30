@@ -110,8 +110,9 @@ file is chosen and is there. <strong>Show</strong> opens the viewer on that file
 file's own points, and <strong>Show samples</strong> puts a dot on every one of them so the step can be seen.</p>
 <p><strong>Comments</strong> reads as a count. Hover it and the lines themselves pop up.</p>
 <h2 id="plots-shown">Choosing the plots</h2>
-<p>Three buttons sit above the plots: the Smith chart, magnitude and phase. Each turns its plot on or
-off, and the last one stays on.</p>
+<p>Three buttons sit above the plots: the Smith chart, magnitude and phase. The window opens with the
+Smith chart and magnitude on, and phase off. Each button turns its plot on or off, and with none of
+them on the pane is empty.</p>
 <table>
 <thead>
 <tr>
@@ -122,7 +123,7 @@ off, and the last one stays on.</p>
 <tbody>
 <tr>
 <td>One</td>
-<td>That plot, filling the window.</td>
+<td>That plot, filling the pane.</td>
 </tr>
 <tr>
 <td>The Smith chart and one of the others</td>
@@ -134,6 +135,7 @@ off, and the last one stays on.</p>
 </tr>
 </tbody>
 </table>
+<p>The names of the traces sit beside each plot. Nothing is written above the curves.</p>
 <h2 id="plots">The three plots</h2>
 <p><strong>Reflection</strong> is a Smith chart of the reflection at each port — S11, S22 and so on.</p>
 <p><strong>Magnitude</strong> is every ticked term in dB against frequency, and <strong>Phase</strong> is the same terms in degrees.
@@ -178,8 +180,8 @@ file is.</p>
 </table>
 <p>Up to four ports, <strong>Default</strong> is every term. Above that it is the reflections plus each forward
 neighbour, S21, S32, S43 and so on — an <code>.s16p</code> has 256 terms, and drawing all of them is a
-choice rather than a greeting. Past six terms the rectangular plots drop their legend, because the
-legend would cover the curves; each tick box carries its term's colour.</p>
+choice rather than a greeting. Past six terms the list beside a plot is left off, because it would
+take the width the curves need; each tick box carries its term's colour.</p>
 <h2 id="findings">Findings</h2>
 <p>Three things about a file are defects, and each is stated as a sentence naming where:</p>
 <ul>
@@ -195,7 +197,7 @@ no plots.</p>
 not reciprocal, and neither is a defect in a file; <a href="cli.html#check"><code>circuitrf check</code></a> measures all
 three and leaves the judgement to you.</p>
 <h2 id="saving">Saving it as a Data Display</h2>
-<p>The viewer keeps nothing of its own. The chart button in the header, <strong>Save as Data Display</strong>, writes
+<p>The viewer keeps nothing of its own. <strong>Save as Data Display</strong> in the header writes
 the plots as they stand to a <code>.cdd</code> and opens it, so markers, axes and terms can be edited afterwards
 in the <a href="data-display.html">Data Display</a>. The file itself is referenced, not copied.</p>
 <p><strong>Reload</strong> reads the file again, which is what you want after a measurement or a run has rewritten it.

@@ -209,15 +209,53 @@ public sealed class SParameterViewerTests : IDisposable
     // ── the window's view model ──────────────────────────────────────────────
 
     [Fact]
-    public void TheLastPlotStaysOn()
+    public void TheWindowOpensOnSmithAndMagnitude_AndEveryPlotCanBeOff()
     {
         var vm = new SParameterViewerViewModel();
-        vm.ShowMagnitude = false;
-        vm.ShowPhase = false;
-        vm.ShowSmith = false;
         Assert.True(vm.ShowSmith);
+        Assert.True(vm.ShowMagnitude);
+        Assert.False(vm.ShowPhase);
+
+        vm.ShowSmith = false;
+        vm.ShowMagnitude = false;
+        Assert.False(vm.ShowSmith);
         Assert.False(vm.ShowMagnitude);
         Assert.False(vm.ShowPhase);
+    }
+
+    [Fact]
+    public void TraceNamesSitBesideThePlot_AndTheSmithChartStaysInsideItsRow()
+    {
+        var vm = new SParameterViewerViewModel();
+        string path = Write(2, Uniform(1e9, 0.1e9, 41));
+        vm.Show(path, Read(path), null);
+
+        Assert.False(vm.SmithPlot.CustomTitleOn);
+        Assert.False(vm.MagnitudePlot.CustomTitleOn);
+        Assert.Equal(LegendPlacement.Off, vm.SmithPlot.Legend);
+        Assert.Equal(LegendPlacement.Off, vm.MagnitudePlot.Legend);
+        Assert.Equal(LegendPlacement.Off, vm.PhasePlot.Legend);
+        Assert.All(vm.SmithPlot.Traces, t => Assert.True(t.ExcludeFromAxisLabels));
+        Assert.Equal(["S(1,1)", "S(2,2)"], vm.SmithLegend.Select(e => e.Label));
+        Assert.Equal(4, vm.MagnitudeLegend.Count);
+        Assert.Contains("S(1,1)", vm.MagnitudeLegend[0].Label);
+        Assert.Equal(4, vm.PhaseLegend.Count);
+
+        // A title used to push the disc down without shrinking it, so the bottom of a Smith chart
+        // drawn into a fixed row landed past the row — over the window, and over the plots below.
+        foreach (var (w, h) in new[] { (900.0, 700.0), (900.0, 280.0), (400.0, 700.0) })
+        {
+            var vp = PlotRenderer.BuildTransforms(vm.SmithPlot, (w, h)).Viewport;
+            Assert.InRange(vp.Y, 0, 1);
+            Assert.InRange(vp.X, 0, 1);
+            Assert.True(vp.Y + vp.Height <= 1.001, $"disc bottom {vp.Y + vp.Height} at {w}×{h}");
+            Assert.True(vp.X + vp.Width <= 1.001, $"disc right {vp.X + vp.Width} at {w}×{h}");
+        }
+
+        string wide = Write(3, Uniform(1e9, 0.1e9, 11), "wide.s3p");
+        vm.Show(wide, Read(wide), null);
+        Assert.Empty(vm.MagnitudeLegend);
+        Assert.Equal(3, vm.SmithLegend.Count);
     }
 
     [Fact]

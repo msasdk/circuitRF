@@ -61,14 +61,17 @@ file's own points, and **Show samples** puts a dot on every one of them so the s
 
 ## Choosing the plots {#plots-shown}
 
-Three buttons sit above the plots: the Smith chart, magnitude and phase. Each turns its plot on or
-off, and the last one stays on.
+Three buttons sit above the plots: the Smith chart, magnitude and phase. The window opens with the
+Smith chart and magnitude on, and phase off. Each button turns its plot on or off, and with none of
+them on the pane is empty.
 
 | On | The pane shows |
 |---|---|
-| One | That plot, filling the window. |
+| One | That plot, filling the pane. |
 | The Smith chart and one of the others | The Smith chart on top, the other below it. |
 | All three | Smith chart, then magnitude, then phase, from top to bottom. |
+
+The names of the traces sit beside each plot. Nothing is written above the curves.
 
 ## The three plots {#plots}
 
@@ -103,8 +106,8 @@ Every term is a tick box, and a reflection's name is the heavier one. The four b
 
 Up to four ports, **Default** is every term. Above that it is the reflections plus each forward
 neighbour, S21, S32, S43 and so on &mdash; an `.s16p` has 256 terms, and drawing all of them is a
-choice rather than a greeting. Past six terms the rectangular plots drop their legend, because the
-legend would cover the curves; each tick box carries its term's colour.
+choice rather than a greeting. Past six terms the list beside a plot is left off, because it would
+take the width the curves need; each tick box carries its term's colour.
 
 ## Findings {#findings}
 
@@ -125,7 +128,7 @@ three and leaves the judgement to you.
 
 ## Saving it as a Data Display {#saving}
 
-The viewer keeps nothing of its own. The chart button in the header, **Save as Data Display**, writes
+The viewer keeps nothing of its own. **Save as Data Display** in the header writes
 the plots as they stand to a `.cdd` and opens it, so markers, axes and terms can be edited afterwards
 in the [Data Display](data-display.html). The file itself is referenced, not copied.
 
